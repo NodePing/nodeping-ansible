@@ -1,0 +1,79 @@
+---
+- hosts: localhost
+
+  vars:
+    mytoken: token-goes-here
+
+  tasks:
+    - name: Test nodeping module
+      nodeping:
+        action: create
+        checktype: PING
+        target: example.com
+        label: mytestcheck
+        enabled: False
+        token: "{{ mytoken }}"
+        notifications:
+        - group: your-group-id
+          notifydelay: 2
+          notifyschedule: All the time
+        - contact: QEUVW
+          notifydelay: 0
+          notifyschedule: All the time
+        - name: me
+          address: me@example.com
+          notifydelay: 0
+          notifyschedule: All the time
+      register: result
+        
+    - name: Output result of first creation
+      debug:
+        var: result
+
+    - name: Get a check
+      nodeping:
+        action: get
+        checkid: "{{ result.message._id }}"
+        token: "{{ mytoken }}"
+      register: retrieved_check
+
+    - name: Output result from GET
+      debug:
+        var: retrieved_check
+
+    - name: Update the first check
+      nodeping:
+        action: update
+        token: "{{ mytoken }}"
+        checkid: "{{ result['message']['_id'] }}"
+        target: new.example.com
+        label: thiswaschanged
+        interval: 3
+        threshold: 4
+        notifications:
+        - group: group-name-here
+          notifydelay: 1
+          notifyschedule: All the time
+        - contact: QEUVW
+          notifydelay: 0
+          notifyschedule: Nights
+        - name: me
+          address: me@example.com
+          notifydelay: 10
+          notifyschedule: Weekdays
+      register: check_updated
+
+    - name: Output showing the check updates
+      debug:
+        var: check_updated
+
+    - name: Delete the first check
+      nodeping:
+        action: delete
+        token: "{{ mytoken }}"
+        checkid: "{{ result['message']['_id'] }}"
+      register: check_deleted
+
+    - name: Output that the check was deleted
+      debug:
+        var: check_deleted
