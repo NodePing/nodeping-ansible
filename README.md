@@ -37,19 +37,19 @@ This is done by delegating the nodeping tasks to localhost.
   
   vars:
     mytoken: secret-token-here
-	
+    
   tasks:
     - name: Create a check for current host
       delegate_to: localhost
       nodeping:
         action: create
-		checktype: PING
-		target: "{{ ansible_default_ipv4.address }}"
-		label: mytest ping
-		enabled: False
-		interval: 1
-		token: "{{ mytoken }}"
-		notifications:
+        checktype: PING
+        target: "{{ ansible_default_ipv4.address }}"
+        label: mytest ping
+        enabled: False
+        interval: 1
+        token: "{{ mytoken }}"
+        notifications:
         - group: My Contact Group
           notifydelay: 2
           notifyschedule: All the time
@@ -69,18 +69,18 @@ remotely on each machine.
 
   vars:
     mytoken: secret-token-here
-	
+    
   tasks:
     - name: Install pip for your system
       package:
-	    name: python-pip
-	    state: present
-		
+        name: python-pip
+        state: present
+        
     - name: Install nodeping-api
-	  pip:
-	    name: nodeping-api
-		state: present
-		
+      pip:
+        name: nodeping-api
+        state: present
+        
     - name: Test create an HTTP check
       nodeping:
         action: create
@@ -115,13 +115,13 @@ Otherwise, it is most prudent to get checks by their ID.
 
   vars:
     mytoken: secret-token-here
-	
+    
   tasks:
     - name: Get check by its label
-	  nodeping:
-	    action: get
-		label: my-checks-label
-		token: "{{ mytoken }}"
+      nodeping:
+        action: get
+        label: my-checks-label
+        token: "{{ mytoken }}"
 ```
 
 You can then register the result and use the information you retrieved.
@@ -136,11 +136,11 @@ checks with the same ID.
 
   vars:
     mytoken: secret-token-here
-	
+    
   tasks:
     - name: Get check by its label
-	  nodeping:
-	    action: get
-		checkid: your-checkid
-		token: "{{ mytoken }}"
+      nodeping:
+        action: get
+        checkid: your-checkid
+        token: "{{ mytoken }}"
 ```
