@@ -28,7 +28,7 @@ repository.
 ### Running Locally
 
 This method will allow you to run your playbooks, but you won't need the nodeping-api 
-code installed on your remote machines. This is done by delegating the nodeping tasks
+code installed on your target machines. This is done by delegating the nodeping tasks
 to localhost.
 
 ``` yaml
@@ -36,10 +36,10 @@ to localhost.
 - hosts: test
   
   vars:
-    mytoken: secret-token-here
+    nodeping_api_token: secret-token-here
     
   tasks:
-    - name: Create a check for current host
+    - name: Create a NodePing check for target host
       delegate_to: localhost
       nodeping:
         action: create
@@ -48,7 +48,7 @@ to localhost.
         label: mytest ping
         enabled: False
         interval: 1
-        token: "{{ mytoken }}"
+        token: "{{ nodeping_api_token }}"
         notifications:
         - group: My Contact Group
           notifydelay: 2
@@ -67,7 +67,7 @@ but it will require that the Python nodeping-api is installed remotely on each m
 - hosts: test
 
   vars:
-    mytoken: secret-token-here
+    nodeping_api_token: secret-token-here
     
   tasks:
     - name: Install pip for your system
@@ -80,14 +80,14 @@ but it will require that the Python nodeping-api is installed remotely on each m
         name: nodeping-api
         state: present
         
-    - name: Test create an HTTP check
+    - name: Test create a NodePing HTTP check
       nodeping:
         action: create
         checktype: HTTP
-        target: "http://{{ ansible_default_ipv4.address }}"
+        target: "https://{{ ansible_default_ipv4.address }}"
         label: test http
         interval: 3
-        token: "{{ mytoken }}"
+        token: "{{ nodeping_api_token }}"
         notifications:
         - group: testgroup
           notifydelay: 2
@@ -101,46 +101,46 @@ but it will require that the Python nodeping-api is installed remotely on each m
           notifyschedule: Nights
 ```
 
-### Getting a Check by Label
+### Getting a NodePing Check by Label
 
-Sometimes you are required to get a check by a label. However, keep in mind
-you can have many checks with the same label, and there is no guarantee you
+Sometimes you are required to get a NodePing check by a label. However, keep in mind
+you can have many NodePing checks with the same label, and there is no guarantee you
 will be working with the check you're thinking of. If you plan to manage
-checks by label, you have to ensure you have checks with no duplicate labels.
-Otherwise, it is most prudent to get checks by their ID.
+NodePing checks by label, you have to ensure you have checks with no duplicate labels.
+Otherwise, it is most prudent to get NodePing checks by their ID.
 
 ``` yaml
 - hosts: test
 
   vars:
-    mytoken: secret-token-here
+    nodeping_api_token: secret-token-here
     
   tasks:
     - name: Get check by its label
       nodeping:
         action: get
         label: my-checks-label
-        token: "{{ mytoken }}"
+        token: "{{ nodeping_api_token }}"
 ```
 
 You can then register the result and use the information you retrieved. There
 is an example of this in the example playbook `test_nodeping.yml`
 
-### Getting a Check by ID
+### Getting a NodePing Check by ID
 
-This is the recommended method of getting a check, since there are no two
+This is the recommended method of getting a NodePing check, since there are no two
 checks with the same ID.
 
 ``` yaml
 - hosts: test
 
   vars:
-    mytoken: secret-token-here
+    nodeping_api_token: secret-token-here
     
   tasks:
-    - name: Get check by its label
+    - name: Get NodePing check by its ID
       nodeping:
         action: get
-        checkid: your-checkid
-        token: "{{ mytoken }}"
+        checkid: your-nodeping-checkid
+        token: "{{ nodeping_api_token }}"
 ```

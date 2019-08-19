@@ -23,7 +23,7 @@ short_description: Manage your NodePing checks
 version_added: "2.5"
 
 description:
-    - This module will let you create or delete checks on your NodePing account
+    - This module will let you get, create, update, or delete checks on your NodePing account
 requirements:
     - "The NodePing Python library: https://github.com/NodePing/python-nodeping-api"
 

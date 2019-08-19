@@ -2,17 +2,18 @@
 - hosts: localhost
 
   vars:
-    mytoken: token-goes-here
+    nodeping_api_token: token-goes-here
 
   tasks:
-    - name: Test nodeping module
+    - name: Create PING check from localhost
+      delegate_to: localhost
       nodeping:
         action: create
         checktype: PING
         target: example.com
         label: mytestcheck
         enabled: False
-        token: "{{ mytoken }}"
+        token: "{{ nodeping_api_token }}"
         notifications:
         - group: your-group-id
           notifydelay: 2
@@ -30,21 +31,22 @@
       debug:
         var: result
 
-    - name: Get a check
+    - name: Get a check, run from localhost
+      delegate_to: localhost
       nodeping:
         action: get
         checkid: "{{ result.message._id }}"
-        token: "{{ mytoken }}"
+        token: "{{ nodeping_api_token }}"
       register: retrieved_check
 
     - name: Output result from GET
       debug:
         var: retrieved_check
 
-    - name: Update the first check
+    - name: Update the first check, run from target host
       nodeping:
         action: update
-        token: "{{ mytoken }}"
+        token: "{{ nodeping_api_token }}"
         checkid: "{{ result['message']['_id'] }}"
         target: new.example.com
         label: thiswaschanged
@@ -70,7 +72,7 @@
     - name: Delete the first check
       nodeping:
         action: delete
-        token: "{{ mytoken }}"
+        token: "{{ nodeping_api_token }}"
         checkid: "{{ result['message']['_id'] }}"
       register: check_deleted
 
