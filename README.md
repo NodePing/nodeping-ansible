@@ -27,9 +27,9 @@ repository.
 
 ### Running Locally
 
-This method will allow you to run your playbooks on your remote machines that you are
-building, but you won't need the nodeping-api code installed on your remote machines.
-This is done by delegating the nodeping tasks to localhost.
+This method will allow you to run your playbooks, but you won't need the nodeping-api 
+code installed on your remote machines. This is done by delegating the nodeping tasks
+to localhost.
 
 ``` yaml
 ---
@@ -60,9 +60,8 @@ This is done by delegating the nodeping tasks to localhost.
 
 ### Running Remotely
 
-This method doesn't require you to include the `delegate_to` and variables
-for each `nodeping` task, but it will require that the Python nodeping-api is installed
-remotely on each machine.
+This method doesn't require you to include the `delegate_to` for each `nodeping` task,
+but it will require that the Python nodeping-api is installed remotely on each machine.
 
 ``` yaml
 - hosts: test
@@ -124,7 +123,8 @@ Otherwise, it is most prudent to get checks by their ID.
         token: "{{ mytoken }}"
 ```
 
-You can then register the result and use the information you retrieved.
+You can then register the result and use the information you retrieved. There
+is an example of this in the example playbook `test_nodeping.yml`
 
 ### Getting a Check by ID
 
