@@ -75,7 +75,7 @@ options:
       - If yes public reports will be enabled for this check
     type: bool
     default: no
-  runlocation:
+  runlocations:
     description:
       - Which region to run your checks from
       - type: str
@@ -274,7 +274,7 @@ EXAMPLES = '''
     target: example.com
     interval: 1
     enabled: yes
-    runlocation: nam
+    runlocations: nam
     notifications:
       - name: My Email
         address: me@example.com
@@ -667,7 +667,7 @@ def run_module():
         interval=dict(type='int', required=False, default=15),
         enabled=dict(type='bool', required=False, default=True),
         public=dict(type='bool', required=False, default=False),
-        runlocation=dict(type='str', required=False),
+        runlocations=dict(type='str', required=False),
         homeloc=dict(type='str', required=False),
         threshold=dict(type='int', required=False, default=5),
         sens=dict(type='int', required=False, default=2),
