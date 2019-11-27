@@ -507,6 +507,12 @@ def update_nodeping_check(parameters):
 
             continue
 
+        # Always pass the provided dependency because not passing it will
+        # remove the dependency from the existing check
+        if key == "dep":
+            update_fields.update({'dep': compare})
+            continue
+
         # If the value is different, add the change
         if value != compare:
             changed = True
