@@ -802,7 +802,7 @@ def run_module():
     except KeyError:
         result['changed'] = False
     else:
-        result['changed'] = output['changed']
+        result['changed'] = output.pop('changed')
 
     # during the execution of the module, if there is an exception or a
     # conditional state that effectively causes a failure, run
