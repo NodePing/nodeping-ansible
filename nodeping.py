@@ -507,6 +507,12 @@ def update_nodeping_check(parameters):
 
             continue
 
+        # Always pass the provided dependency because not passing it will
+        # remove the dependency from the existing check
+        if key == "dep":
+            update_fields.update({'dep': compare})
+            continue
+
         # If the value is different, add the change
         if value != compare:
             changed = True
@@ -796,7 +802,7 @@ def run_module():
     except KeyError:
         result['changed'] = False
     else:
-        result['changed'] = output['changed']
+        result['changed'] = output.pop('changed')
 
     # during the execution of the module, if there is an exception or a
     # conditional state that effectively causes a failure, run
