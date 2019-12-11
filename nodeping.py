@@ -681,6 +681,7 @@ def run_module():
         checktoken=dict(type='str', required=False),
         contentstring=dict(type='str', required=False),
         dnstype=dict(type='str', required=False),
+        dnstoresolve=dict(type='str', required=False),
         dnsrd=dict(type='bool', required=False, default=True),
         transport=dict(type='str', required=False,
                        default='udp', choices=['udp', 'tcp']),
