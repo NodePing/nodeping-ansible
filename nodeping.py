@@ -198,6 +198,10 @@ options:
       - Optional objects used by HTTPADV ('data' can also be used for CLUSTER.
       - They are formatted as key:value pairs.
     type: dict
+  websocketdata:
+    description:
+      - Data that will be sent to the websocket
+    type: str
   receiveheaders:
     description:
       - Optional objects used by HTTPADV ('data' can also be used for CLUSTER.
@@ -427,9 +431,22 @@ def create_nodeping_check(parameters):
     # Get the args so we can collect them and throw out the stuff that isn't
     # defined by the user in their playbook
     func_args = inspect.getargspec(FUNC_LIST[func_name])
+
+    # websocketdata isn't part of the API but is necessary to get the data in
+    # string format for the 'data' key. This is a workaround to ensure the
+    # NodePing API gets the expected data key, and make sure the Ansible
+    # module is happy with the other `data` keys that are a dict.
+    if checktype == "websocket":
+        data = parameters['websocketdata']
+        del parameters['websocketdata']
+
     passed_args = [arg for arg in parameters if arg in func_args.args and arg]
 
     args = {arg: parameters[arg] for arg in passed_args if arg in parameters}
+
+    # websocket `data` is a str, so we add the data k/v pair back to args
+    if checktype == "websocket":
+        args.update({'data': data})
 
     # Get contacts & notification schedules if they exist
     if parameters['notifications']:
@@ -698,6 +715,7 @@ def run_module():
         fields=dict(type='dict', required=False),
         postdata=dict(type='str', required=False),
         data=dict(type='dict', required=False),
+        websocketdata=dict(type='str', required=False),
         receiveheaders=dict(type='dict', required=False),
         sendheaders=dict(type='dict', required=False),
         method=dict(type='str', required=False, choices=[
