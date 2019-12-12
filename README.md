@@ -11,7 +11,7 @@ modules directory (the `library` variable in your ansible.cfg file). In addition
 you will have to have the nodeping-api library installed on the system that
 will be handling your NodePing checks. You can install the library with pip:
 
-`pip install nodeping-api==0.9.9-4`
+`pip install nodeping-api`
 
 The repository can be found [here](https://github.com/NodePing/python-nodeping-api)
 
