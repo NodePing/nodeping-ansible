@@ -517,6 +517,10 @@ def update_nodeping_check(parameters):
 
             continue
 
+        # Required to properly update the data field for WEBSOCKET checks
+        if checktype == "WEBSOCKET" and parameters['websocketdata']:
+            update_fields.update({'data': parameters['websocketdata']})
+
         # Replace the old notifications with the newly provided ones
         if key == "notifications":
             update_fields.update({'notifications': convert_contacts(
