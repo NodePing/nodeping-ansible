@@ -359,6 +359,7 @@ else:
     IMPORTED_NODEPING_API = True
 
 FUNC_LIST = {
+    "create_check.agent_check": create_check.agent_check,
     "create_check.audio_check": create_check.audio_check,
     "create_check.cluster_check": create_check.cluster_check,
     "create_check.dns_check": create_check.dns_check,
@@ -379,6 +380,8 @@ FUNC_LIST = {
     "create_check.sip_check": create_check.sip_check,
     "create_check.smtp_check": create_check.smtp_check,
     "create_check.snmp_check": create_check.snmp_check,
+    "create_check.spec10dns_check": create_check.spec10dns_check,
+    "create_check.spec10rdds_check": create_check.spec10rdds_check,
     "create_check.ssh_check": create_check.ssh_check,
     "create_check.ssl_check": create_check.ssl_check,
     "create_check.websocket_check": create_check.websocket_check,
