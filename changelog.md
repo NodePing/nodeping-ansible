@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 (Placeholder for unreleased content)
 
+## [2020-07-16]
+- Fixed an issue with submitting checks with null fields
+- Fixed an import issue with Python 2
+- Added support for a few check types
+
 ## [2019-12-12]
 - Fixed updating WEBSOCKET checks with the `data` field. As with creating, using the `websocketdata` argument will update the `data` field for WEBSOCKET checks
 
