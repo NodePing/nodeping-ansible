@@ -9,12 +9,12 @@ import traceback
 from ansible.module_utils.basic import AnsibleModule
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.2",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: nodeping
 
@@ -266,9 +266,9 @@ options:
 
 author:
     - NodePing (@nodeping)
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 # Create a ping check to check every minute with single contact
 - name: Create a ping check with 3 minute notification delay
   nodeping:
@@ -327,9 +327,9 @@ EXAMPLES = '''
   nodeping:
     action: delete
     checkid: 201205050153W2Q4C-0J2HSIRF
-'''
+"""
 
-RETURN = '''
+RETURN = """
 original_message:
     description: The original name param that was passed in
     type: str
@@ -338,13 +338,20 @@ message:
     description: The response that NodePing returns after a check is created/updated/deleted
     type: dict
     returned: always
-'''
+"""
 
 
 NODEPING_IMPORT_ERROR = None
 
 try:
-    from nodeping_api import get_checks, contacts, create_check, update_checks, delete_checks, group_contacts
+    from nodeping_api import (
+        get_checks,
+        contacts,
+        create_check,
+        update_checks,
+        delete_checks,
+        group_contacts,
+    )
 except ImportError:
     NODEPING_IMPORT_ERROR = traceback.format_exc()
     IMPORTED_NODEPING_API = False
@@ -352,30 +359,30 @@ else:
     IMPORTED_NODEPING_API = True
 
 FUNC_LIST = {
-    'create_check.audio_check': create_check.audio_check,
-    'create_check.cluster_check': create_check.cluster_check,
-    'create_check.dns_check': create_check.dns_check,
-    'create_check.ftp_check': create_check.ftp_check,
-    'create_check.http_check': create_check.http_check,
-    'create_check.httpadv_check': create_check.httpadv_check,
-    'create_check.httpcontent_check': create_check.httpcontent_check,
-    'create_check.httpparse_check': create_check.httpparse_check,
-    'create_check.imap4_check': create_check.imap4_check,
-    'create_check.mysql_check': create_check.mysql_check,
-    'create_check.ntp_check': create_check.ntp_check,
-    'create_check.ping_check': create_check.ping_check,
-    'create_check.pop3_check': create_check.pop3_check,
-    'create_check.port_check': create_check.port_check,
-    'create_check.push_check': create_check.push_check,
-    'create_check.rbl_check': create_check.rbl_check,
-    'create_check.rdp_check': create_check.rdp_check,
-    'create_check.sip_check': create_check.sip_check,
-    'create_check.smtp_check': create_check.smtp_check,
-    'create_check.snmp_check': create_check.snmp_check,
-    'create_check.ssh_check': create_check.ssh_check,
-    'create_check.ssl_check': create_check.ssl_check,
-    'create_check.websocket_check': create_check.websocket_check,
-    'create_check.whois_check': create_check.whois_check
+    "create_check.audio_check": create_check.audio_check,
+    "create_check.cluster_check": create_check.cluster_check,
+    "create_check.dns_check": create_check.dns_check,
+    "create_check.ftp_check": create_check.ftp_check,
+    "create_check.http_check": create_check.http_check,
+    "create_check.httpadv_check": create_check.httpadv_check,
+    "create_check.httpcontent_check": create_check.httpcontent_check,
+    "create_check.httpparse_check": create_check.httpparse_check,
+    "create_check.imap4_check": create_check.imap4_check,
+    "create_check.mysql_check": create_check.mysql_check,
+    "create_check.ntp_check": create_check.ntp_check,
+    "create_check.ping_check": create_check.ping_check,
+    "create_check.pop3_check": create_check.pop3_check,
+    "create_check.port_check": create_check.port_check,
+    "create_check.push_check": create_check.push_check,
+    "create_check.rbl_check": create_check.rbl_check,
+    "create_check.rdp_check": create_check.rdp_check,
+    "create_check.sip_check": create_check.sip_check,
+    "create_check.smtp_check": create_check.smtp_check,
+    "create_check.snmp_check": create_check.snmp_check,
+    "create_check.ssh_check": create_check.ssh_check,
+    "create_check.ssl_check": create_check.ssl_check,
+    "create_check.websocket_check": create_check.websocket_check,
+    "create_check.whois_check": create_check.whois_check,
 }
 
 
@@ -383,11 +390,11 @@ def get_nodeping_check(parameters):
     """ Gets the user defined check by its checkid
     """
 
-    token = parameters['token']
-    customerid = parameters['customerid']
-    checkid = parameters['checkid']
+    token = parameters["token"]
+    customerid = parameters["customerid"]
+    checkid = parameters["checkid"]
     try:
-        label = parameters['label']
+        label = parameters["label"]
     except KeyError:
         label = None
 
@@ -405,7 +412,7 @@ def get_nodeping_check(parameters):
 
     if label:
         for _key, value in result.items():
-            if value.get('label') == label:
+            if value.get("label") == label:
                 result = value
                 continue
 
@@ -415,55 +422,64 @@ def get_nodeping_check(parameters):
         result.update({"changed": False})
         return (False, checkid, result)
     else:
-        return(True, checkid, result)
+        return (True, checkid, result)
 
 
 def create_nodeping_check(parameters):
     """ Creates a check with NodePing based on parameters passed in via Ansible
     """
 
-    token = parameters['token']
-    customerid = parameters['customerid']
-    name = parameters['label']
-    checktype = parameters['checktype'].lower()
+    token = parameters["token"]
+    customerid = parameters["customerid"]
+    name = parameters["label"]
+    checktype = parameters["checktype"].lower()
     func_name = "create_check.%s_check" % checktype
 
     # Get the args so we can collect them and throw out the stuff that isn't
     # defined by the user in their playbook
-    func_args = inspect.getargspec(FUNC_LIST[func_name])
+    try:
+        func_args = inspect.getfullargspec(FUNC_LIST[func_name])
+    except AttributeError:
+        # Kept for python 2 compatibility
+        func_args = inspect.getargspec(FUNC_LIST[func_name])
 
     # websocketdata isn't part of the API but is necessary to get the data in
     # string format for the 'data' key. This is a workaround to ensure the
     # NodePing API gets the expected data key, and make sure the Ansible
     # module is happy with the other `data` keys that are a dict.
     if checktype == "websocket":
-        data = parameters['websocketdata']
-        del parameters['websocketdata']
+        data = parameters["websocketdata"]
+        del parameters["websocketdata"]
 
-    passed_args = [arg for arg in parameters if arg in func_args.args and arg]
+    passed_args = {arg: parameters[arg] for arg in func_args.args if arg in parameters}
+    print("MERGED: %s" % str(passed_args))
 
-    args = {arg: parameters[arg] for arg in passed_args if arg in parameters}
+    args = {}
+    for key, value in passed_args.items():
+        if value:
+            args.update({key: value})
 
     # websocket `data` is a str, so we add the data k/v pair back to args
     if checktype == "websocket":
-        args.update({'data': data})
+        args.update({"data": data})
 
     # Get contacts & notification schedules if they exist
-    if parameters['notifications']:
+    if parameters["notifications"]:
 
-        notifications = parameters['notifications']
+        notifications = parameters["notifications"]
 
         if not isinstance(notifications, list):
             notifications = [notifications]
 
-        args.update({'notifications': convert_contacts(
-            notifications, token, customerid)})
+        args.update(
+            {"notifications": convert_contacts(notifications, token, customerid)}
+        )
 
     # Match the function name and its args to the function list above
     result = FUNC_LIST[func_name](**args)
 
     try:
-        created = bool(result['created'])
+        created = bool(result["created"])
         result.update({"changed": True})
     except KeyError:
         result.update({"changed": False})
@@ -479,19 +495,17 @@ def update_nodeping_check(parameters):
     update_fields = {}
     changed = False
 
-    token = parameters['token']
-    check_id = parameters['checkid']
-    label = parameters['label']
-    customerid = parameters['customerid']
-    query = get_checks.GetChecks(
-        token, checkid=check_id, customerid=customerid)
+    token = parameters["token"]
+    check_id = parameters["checkid"]
+    label = parameters["label"]
+    customerid = parameters["customerid"]
+    query = get_checks.GetChecks(token, checkid=check_id, customerid=customerid)
 
     check_info = query.get_by_id()
-    checktype = check_info['type']
+    checktype = check_info["type"]
 
     # Removes all values that are not provided by the user
-    stripped_params = {key: value for (
-        key, value) in parameters.items() if value}
+    stripped_params = {key: value for (key, value) in parameters.items() if value}
 
     for key, value in check_info.items():
         try:
@@ -518,20 +532,25 @@ def update_nodeping_check(parameters):
             continue
 
         # Required to properly update the data field for WEBSOCKET checks
-        if checktype == "WEBSOCKET" and parameters['websocketdata']:
-            update_fields.update({'data': parameters['websocketdata']})
+        if checktype == "WEBSOCKET" and parameters["websocketdata"]:
+            update_fields.update({"data": parameters["websocketdata"]})
 
         # Replace the old notifications with the newly provided ones
         if key == "notifications":
-            update_fields.update({'notifications': convert_contacts(
-                parameters['notifications'], token, customerid)})
+            update_fields.update(
+                {
+                    "notifications": convert_contacts(
+                        parameters["notifications"], token, customerid
+                    )
+                }
+            )
 
             continue
 
         # Always pass the provided dependency because not passing it will
         # remove the dependency from the existing check
         if key == "dep":
-            update_fields.update({'dep': compare})
+            update_fields.update({"dep": compare})
             continue
 
         # If the value is different, add the change
@@ -541,11 +560,12 @@ def update_nodeping_check(parameters):
 
     # Update the check
     result = update_checks.update(
-        token, check_id, checktype, update_fields, customerid=customerid)
+        token, check_id, checktype, update_fields, customerid=customerid
+    )
     result.update({"changed": changed})
 
     try:
-        result['error']
+        result["error"]
     except KeyError:
         return (True, "%s changed" % label, result)
     else:
@@ -556,14 +576,14 @@ def delete_nodeping_check(parameters):
     """ Deletes an existing check based on parameters passed in via Ansible
     """
 
-    token = parameters['token']
-    checkid = parameters['checkid']
-    customerid = parameters['customerid']
+    token = parameters["token"]
+    checkid = parameters["checkid"]
+    customerid = parameters["customerid"]
 
     result = delete_checks.remove(token, checkid, customerid=customerid)
 
     try:
-        result['error']
+        result["error"]
     except KeyError:
         return (True, checkid, result)
     else:
@@ -579,8 +599,8 @@ def convert_contacts(notification_contacts, token, customerid):
         {'contact': '4RF81', 'notifydelay': 0, 'notifyschedule': 'testwindow'}
         """
 
-        delay = contact['notifydelay']
-        schedule = contact['notifyschedule']
+        delay = contact["notifydelay"]
+        schedule = contact["notifyschedule"]
 
         # NOTE: There could be many contacts with these names but with
         # different contact ID keys. That means there's potential for
@@ -591,7 +611,7 @@ def convert_contacts(notification_contacts, token, customerid):
             # Some contacts might not have a name field.
             # Time to guess and check
             try:
-                name = value['name'].rstrip()
+                name = value["name"].rstrip()
             except KeyError:
                 name = None
 
@@ -599,20 +619,20 @@ def convert_contacts(notification_contacts, token, customerid):
             # look for addresses under that contact
             if name:
                 if contact_name == name:
-                    addresses = value['addresses']
+                    addresses = value["addresses"]
                 else:
                     continue
 
                 # If the address matches, pair the contact ID with the
                 # Delay and schedule
                 for _id, info in addresses.items():
-                    if info['address'] == contact['address']:
+                    if info["address"] == contact["address"]:
                         return {_id: {"delay": delay, "schedule": schedule}}
             else:
-                addresses = value['addresses']
+                addresses = value["addresses"]
 
                 for _id, info in addresses.items():
-                    if info['address'] == contact_name:
+                    if info["address"] == contact_name:
                         return {_id: {"delay": delay, "schedule": schedule}}
 
                     continue
@@ -629,29 +649,30 @@ def convert_contacts(notification_contacts, token, customerid):
         :rtype: dict
         """
 
-        delay = contact['notifydelay']
-        schedule = contact['notifyschedule']
+        delay = contact["notifydelay"]
+        schedule = contact["notifyschedule"]
         _id = contact[contact_name]
 
         keyname = None
 
-        if contact_name == 'group':
+        if contact_name == "group":
             if _id in queried_contacts.keys():
                 keyname = _id
             else:
                 for key, value in queried_contacts.items():
-                    if _id == value['name']:
+                    if _id == value["name"]:
                         keyname = key
 
-        elif contact_name == 'contact':
+        elif contact_name == "contact":
             for key, value in queried_contacts.items():
-                if _id in value['addresses'].keys():
+                if _id in value["addresses"].keys():
                     keyname = _id
 
         if keyname:
             return {keyname: {"delay": delay, "schedule": schedule}}
 
         return {"error": "No matching key on account %s" % contact_name}
+
     # End of _get_group_schedule function
 
     return_contacts = []
@@ -665,17 +686,18 @@ def convert_contacts(notification_contacts, token, customerid):
     for contact in notification_contacts:
 
         # If the key is group, then it is a group contact ID
-        if contact.get('group'):
-            return_contacts.append(_get_key_schedule(
-                'group', contact, groups))
+        if contact.get("group"):
+            return_contacts.append(_get_key_schedule("group", contact, groups))
         # If the key is contact, it is a contact ID
-        elif contact.get('contact'):
-            return_contacts.append(_get_key_schedule(
-                'contact', contact, account_contacts))
+        elif contact.get("contact"):
+            return_contacts.append(
+                _get_key_schedule("contact", contact, account_contacts)
+            )
         # If the key is name, it is a contact name and we have to find the ID
-        elif contact.get('name'):
-            return_contacts.append(_get_contact_schedule(
-                contact['name'], contact, account_contacts))
+        elif contact.get("name"):
+            return_contacts.append(
+                _get_contact_schedule(contact["name"], contact, account_contacts)
+            )
 
     return return_contacts
 
@@ -683,59 +705,62 @@ def convert_contacts(notification_contacts, token, customerid):
 def run_module():
     # define available arguments/parameters a user can pass to the module
     module_args = dict(
-        token=dict(type='str', required=True, no_log=True),
-        customerid=dict(type='str', required=False),
-        checktype=dict(type='str', required=False),
-        checkid=dict(type='str', required=False),
-        label=dict(type='str', required=False),
-        target=dict(type='str', required=False),
-        action=dict(type='str', required=True,
-                    choices=['get', 'create', 'update', 'delete']),
-        interval=dict(type='int', required=False, default=15),
-        enabled=dict(type='bool', required=False, default=True),
-        public=dict(type='bool', required=False, default=False),
-        runlocations=dict(type='str', required=False),
-        homeloc=dict(type='str', required=False),
-        threshold=dict(type='int', required=False, default=5),
-        sens=dict(type='int', required=False, default=2),
-        dep=dict(type='str', required=False),
-        checktoken=dict(type='str', required=False),
-        contentstring=dict(type='str', required=False),
-        dnstype=dict(type='str', required=False),
-        dnstoresolve=dict(type='str', required=False),
-        dnsrd=dict(type='bool', required=False, default=True),
-        transport=dict(type='str', required=False,
-                       default='udp', choices=['udp', 'tcp']),
-        follow=dict(type='bool', required=False),
-        email=dict(type='str', required=False),
-        port=dict(type='int', required=False),
-        username=dict(type='str', required=False),
-        password=dict(type='str', required=False, no_log=True),
-        secure=dict(type='bool', required=False),
-        verify=dict(type='bool', required=False),
-        ignore=dict(type='str', required=False),
-        invert=dict(type='bool', required=False, default=False),
-        warningdays=dict(type='int', required=False),
-        fields=dict(type='dict', required=False),
-        postdata=dict(type='str', required=False),
-        data=dict(type='dict', required=False),
-        websocketdata=dict(type='str', required=False),
-        receiveheaders=dict(type='dict', required=False),
-        sendheaders=dict(type='dict', required=False),
-        method=dict(type='str', required=False, choices=[
-            'GET', 'POST', 'PUT', 'HEAD', 'TRACE', 'CONNECT']),
-        statuscode=dict(type='int', required=False),
-        ipv6=dict(type='bool', required=False),
-        snmpv=dict(type='str', required=False,
-                   default='1', choices=['1', '2c']),
-        snmpcom=dict(type='str', required=False, default='public'),
-        verifyvolume=dict(type='bool', required=False),
-        volumein=dict(type='int', required=False),
-        whoisserver=dict(type='str', required=False),
-        notifications=dict(type='list', required=False),
-        notifydelay=dict(type='int', required=False, default=0),
-        notifyschedule=dict(type='str', required=False,
-                            default='All the time')
+        token=dict(type="str", required=True, no_log=True),
+        customerid=dict(type="str", required=False),
+        checktype=dict(type="str", required=False),
+        checkid=dict(type="str", required=False),
+        label=dict(type="str", required=False),
+        target=dict(type="str", required=False),
+        action=dict(
+            type="str", required=True, choices=["get", "create", "update", "delete"]
+        ),
+        interval=dict(type="int", required=False, default=15),
+        enabled=dict(type="bool", required=False, default=True),
+        public=dict(type="bool", required=False, default=False),
+        runlocations=dict(type="str", required=False),
+        homeloc=dict(type="str", required=False),
+        threshold=dict(type="int", required=False, default=5),
+        sens=dict(type="int", required=False, default=2),
+        dep=dict(type="str", required=False),
+        checktoken=dict(type="str", required=False),
+        contentstring=dict(type="str", required=False),
+        dnstype=dict(type="str", required=False),
+        dnstoresolve=dict(type="str", required=False),
+        dnsrd=dict(type="bool", required=False, default=True),
+        transport=dict(
+            type="str", required=False, default="udp", choices=["udp", "tcp"]
+        ),
+        follow=dict(type="bool", required=False),
+        email=dict(type="str", required=False),
+        port=dict(type="int", required=False),
+        username=dict(type="str", required=False),
+        password=dict(type="str", required=False, no_log=True),
+        secure=dict(type="bool", required=False),
+        verify=dict(type="bool", required=False),
+        ignore=dict(type="str", required=False),
+        invert=dict(type="bool", required=False, default=False),
+        warningdays=dict(type="int", required=False),
+        fields=dict(type="dict", required=False),
+        postdata=dict(type="str", required=False),
+        data=dict(type="dict", required=False),
+        websocketdata=dict(type="str", required=False),
+        receiveheaders=dict(type="dict", required=False),
+        sendheaders=dict(type="dict", required=False),
+        method=dict(
+            type="str",
+            required=False,
+            choices=["GET", "POST", "PUT", "HEAD", "TRACE", "CONNECT"],
+        ),
+        statuscode=dict(type="int", required=False),
+        ipv6=dict(type="bool", required=False),
+        snmpv=dict(type="str", required=False, default="1", choices=["1", "2c"]),
+        snmpcom=dict(type="str", required=False, default="public"),
+        verifyvolume=dict(type="bool", required=False),
+        volumein=dict(type="int", required=False),
+        whoisserver=dict(type="str", required=False),
+        notifications=dict(type="list", required=False),
+        notifydelay=dict(type="int", required=False, default=0),
+        notifyschedule=dict(type="str", required=False, default="All the time"),
     )
 
     # seed the result dict in the object
@@ -743,24 +768,18 @@ def run_module():
     # change is if this module effectively modified the target
     # state will include any data that you want your module to pass back
     # for consumption, for example, in a subsequent task
-    result = dict(
-        changed=False,
-        original_message='',
-        message=''
-    )
+    result = dict(changed=False, original_message="", message="")
 
     # the AnsibleModule object will be our abstraction working with Ansible
     # this includes instantiation, a couple of common attr would be the
     # args/params passed to the execution, as well as if the module
     # supports check mode
-    module = AnsibleModule(
-        argument_spec=module_args,
-        supports_check_mode=True
-    )
+    module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
 
     if not IMPORTED_NODEPING_API:
-        module.fail_json(msg="Missing import lib: nodeping-api",
-                         exception=NODEPING_IMPORT_ERROR)
+        module.fail_json(
+            msg="Missing import lib: nodeping-api", exception=NODEPING_IMPORT_ERROR
+        )
 
     # if the user is working with this module in only check mode we do not
     # want to make any changes to the environment, just return the current
@@ -770,62 +789,61 @@ def run_module():
 
     params = module.params
 
-    action = params['action']
+    action = params["action"]
 
-    if action == 'get':
+    if action == "get":
         status, label, output = get_nodeping_check(params)
 
         if not status:
-            module.fail_json(msg="Failed to get checkid %s" %
-                             params['checkid'], **output)
-    elif action == 'create':
-        checktype = params['checktype']
+            module.fail_json(
+                msg="Failed to get checkid %s" % params["checkid"], **output
+            )
+    elif action == "create":
+        checktype = params["checktype"]
 
         # If user specified to create a check, but not the type
         # a check cannot be made
         if not checktype:
-            module.fail_json(
-                msg="No Check Type specified for check creation")
+            module.fail_json(msg="No Check Type specified for check creation")
 
         status, label, output = create_nodeping_check(params)
 
         if not status:
             module.fail_json(msg="Failed to create %s" % label, **output)
 
-    elif action == 'update':
-        if not params['checkid']:
-            module.fail_json(
-                msg="No checkid specified for updating check")
+    elif action == "update":
+        if not params["checkid"]:
+            module.fail_json(msg="No checkid specified for updating check")
 
         status, label, output = update_nodeping_check(params)
 
         if not status:
             module.fail_json(msg="Failed to update %s" % label, **output)
 
-    elif action == 'delete':
-        if not params['checkid']:
-            module.fail_json(
-                msg="No checkid provided to delete a check")
+    elif action == "delete":
+        if not params["checkid"]:
+            module.fail_json(msg="No checkid provided to delete a check")
 
         status, label, output = delete_nodeping_check(params)
 
         if not status:
-            module.fail_json(msg="Failed to delete checkid %s" %
-                             params['checkid'], **output)
+            module.fail_json(
+                msg="Failed to delete checkid %s" % params["checkid"], **output
+            )
 
     # manipulate or modify the state as needed (this is going to be the
     # part where your module will do what it needs to do)
-    result['original_message'] = ''
-    result['message'] = output
+    result["original_message"] = ""
+    result["message"] = output
 
     # use whatever logic you need to determine whether or not this module
     # made any modifications to your target
     try:
-        output['changed']
+        output["changed"]
     except KeyError:
-        result['changed'] = False
+        result["changed"] = False
     else:
-        result['changed'] = output.pop('changed')
+        result["changed"] = output.pop("changed")
 
     # during the execution of the module, if there is an exception or a
     # conditional state that effectively causes a failure, run
@@ -842,5 +860,5 @@ def main():
     run_module()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
