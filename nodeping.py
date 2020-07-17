@@ -455,7 +455,6 @@ def create_nodeping_check(parameters):
         del parameters["websocketdata"]
 
     passed_args = {arg: parameters[arg] for arg in func_args.args if arg in parameters}
-    print("MERGED: %s" % str(passed_args))
 
     args = {}
     for key, value in passed_args.items():
