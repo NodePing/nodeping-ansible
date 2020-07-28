@@ -358,36 +358,6 @@ except ImportError:
 else:
     IMPORTED_NODEPING_API = True
 
-FUNC_LIST = {
-    "create_check.agent_check": create_check.agent_check,
-    "create_check.audio_check": create_check.audio_check,
-    "create_check.cluster_check": create_check.cluster_check,
-    "create_check.dns_check": create_check.dns_check,
-    "create_check.ftp_check": create_check.ftp_check,
-    "create_check.http_check": create_check.http_check,
-    "create_check.httpadv_check": create_check.httpadv_check,
-    "create_check.httpcontent_check": create_check.httpcontent_check,
-    "create_check.httpparse_check": create_check.httpparse_check,
-    "create_check.imap4_check": create_check.imap4_check,
-    "create_check.mysql_check": create_check.mysql_check,
-    "create_check.ntp_check": create_check.ntp_check,
-    "create_check.ping_check": create_check.ping_check,
-    "create_check.pop3_check": create_check.pop3_check,
-    "create_check.port_check": create_check.port_check,
-    "create_check.push_check": create_check.push_check,
-    "create_check.rbl_check": create_check.rbl_check,
-    "create_check.rdp_check": create_check.rdp_check,
-    "create_check.sip_check": create_check.sip_check,
-    "create_check.smtp_check": create_check.smtp_check,
-    "create_check.snmp_check": create_check.snmp_check,
-    "create_check.spec10dns_check": create_check.spec10dns_check,
-    "create_check.spec10rdds_check": create_check.spec10rdds_check,
-    "create_check.ssh_check": create_check.ssh_check,
-    "create_check.ssl_check": create_check.ssl_check,
-    "create_check.websocket_check": create_check.websocket_check,
-    "create_check.whois_check": create_check.whois_check,
-}
-
 
 def get_nodeping_check(parameters):
     """ Gets the user defined check by its checkid
@@ -435,16 +405,23 @@ def create_nodeping_check(parameters):
     token = parameters["token"]
     customerid = parameters["customerid"]
     name = parameters["label"]
-    checktype = parameters["checktype"].lower()
-    func_name = "create_check.%s_check" % checktype
+    checktype = "%s_check" % parameters["checktype"].lower()
+
+    create_functions = [
+        func for func in inspect.getmembers(create_check) if inspect.isfunction(func[1])
+    ]
+
+    for funcs in create_functions:
+        if checktype == funcs[0]:
+            func_location = funcs[1]
 
     # Get the args so we can collect them and throw out the stuff that isn't
     # defined by the user in their playbook
     try:
-        func_args = inspect.getfullargspec(FUNC_LIST[func_name])
+        func_args = inspect.getfullargspec(func_location)
     except AttributeError:
         # Kept for python 2 compatibility
-        func_args = inspect.getargspec(FUNC_LIST[func_name])
+        func_args = inspect.getargspec(func_location)
 
     # websocketdata isn't part of the API but is necessary to get the data in
     # string format for the 'data' key. This is a workaround to ensure the
@@ -478,7 +455,7 @@ def create_nodeping_check(parameters):
         )
 
     # Match the function name and its args to the function list above
-    result = FUNC_LIST[func_name](**args)
+    result = func_location(**args)
 
     try:
         created = bool(result["created"])
