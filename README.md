@@ -11,7 +11,16 @@ modules directory (the `library` variable in your ansible.cfg file). In addition
 you will have to have the nodeping-api library installed on the system that
 will be handling your NodePing checks. You can install the library with pip:
 
-`pip install nodeping-api`
+``` sh
+# python2
+pip install nodeping-api
+
+# python3
+pip3 install nodeping-api
+
+# Alternate python3
+python3 -m pip install nodeping-api
+```
 
 The repository can be found [here](https://github.com/NodePing/python-nodeping-api)
 
@@ -144,3 +153,13 @@ checks with the same ID.
         checkid: your-nodeping-checkid
         token: "{{ nodeping_api_token }}"
 ```
+
+## NodePing Maintenance Module
+
+There is also a separate `nodeping_maintenance` module provided so that you can create new
+ad-hoc or scheduled maintenances to disable your checks as you do a maintenance window.
+
+Set up is just the same as described above in the `Getting Started` section. There are provided examples of how to use the maintenance module in the `test_nodeping_maintenance.yml` playbook.
+
+For further information on NodePing Maintenance, you can refer to the documentation
+[here](https://nodeping.com/docs-api-maintenance.html)
