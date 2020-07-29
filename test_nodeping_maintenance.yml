@@ -1,0 +1,29 @@
+---
+- hosts: localhost
+
+  vars:
+    nodeping_api_token: your-token-here
+
+  tasks:
+    - name: Create ad-hoc maintenance
+      delegate_to: localhost
+      nodeping_maintenance:
+        token: "{{ nodeping_api_token }}"
+        name: ad-hoc maintenance
+        duration: 30
+        scheduled: False
+        checklist:
+          - 201911191441YC6SJ-4S9OJ78G
+          - 201911191441YC6SJ-XB5HUTG6
+
+    - name: Create maintenance schedule
+      delegate_to: localhost
+      nodeping_maintenance:
+        token: "{{ nodeping_api_token }}"
+        name: scheduled maintenance
+        scheduled: True
+        duration: 60
+        cron: 5 0 * 8 *
+        checklist:
+          - 201911191441YC6SJ-4S9OJ78G
+          - 201911191441YC6SJ-XB5HUTG6
