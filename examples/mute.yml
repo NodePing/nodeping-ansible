@@ -1,0 +1,30 @@
+---
+- hosts: localhost
+
+  # Mutes for 3 minutes
+  # Other examples, 3d = 3 days, 300s = 300 seconds, 3h = 3 hours
+
+  vars:
+    nodeping_api_token: token-goes-here
+
+  tasks:
+    - name: Create PING check from localhost
+      delegate_to: localhost
+      nodeping:
+        action: create
+        checktype: PING
+        target: example.com
+        label: example.com ping
+        interval: 1
+        enabled: True
+        token: "{{ nodeping_api_token }}"
+        mute: 3m
+
+    - name: mute existing
+      delegate_to: localhost
+      nodeping:
+        action: update
+        checktype: PING
+        checkid: 201205050153W2Q4C-0J2HSIRF
+        token: "{{ nodeping_api_token }}"
+        mute: 5d

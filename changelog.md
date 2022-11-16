@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 (Placeholder for unreleased content)
 
+## [2022-11-16]
+
+### Added
+
+Supports new fields:
+
+* mute
+* description
+* clientcert
+* dohdot
+* dnssection
+* query
+* sshkey
+* hosts
+* database
+* edns
+* redistype
+* regex
+* sentinelname
+* servername
+
+You can create muted checks, and mute existing checks. Examples provided for muting checks
+and others in the examples directory
+
 ## [2020-07-29]
 
 ### Added

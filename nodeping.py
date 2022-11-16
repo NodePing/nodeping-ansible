@@ -1,16 +1,17 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2019, NodePing LLC <support@nodeping.com>
+# Copyright: (c) 2022, NodePing LLC <support@nodeping.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import inspect
 import traceback
+from time import time
 from ansible.module_utils.basic import AnsibleModule
 
 ANSIBLE_METADATA = {
-    "metadata_version": "1.2",
-    "status": ["preview"],
+    "metadata_version": "1.3",
+    "status": ["stableinterface"],
     "supported_by": "community",
 }
 
@@ -101,15 +102,41 @@ options:
     description:
       - the id of the check used for the notification dependency
     type: str
+  mute:
+    description:
+      - optional boolean or millisecond timestamp or day (D), hour (H), minutes (M) or seconds (S) mute from now
+      - True mutes all notifications
+      - 5D = 5 day mute, 3H = 3 hour mute, 30M = 30 minute mute, 180S = 180 second mute
+    default: false
+    type: str
+  description:
+    description:
+      - optional string. Can put arbitrary text, JSON, XML, etc. Size limit 1000 characters
+    type: str
   checktoken:
     description:
       - read-only field on PUSH checks
       - Can reset this token by setting this value to 'reset'
     type: str
+  clientcert:
+    description:
+      - specify the ID of a client certificate/key to be used in the DOHDOT check
+    type: str
   contentstring:
     description:
       - The string to match the response against.
       - For DNS, HTTPCONTENT, HTTPADV, FTP, SSH, WEBSOCKET, WHOIS type checks
+    type: str
+  dohdot:
+    description:
+      - string used to specify if DoH or DoT in the DOHDOT check.
+    default: doh
+    type: str
+  dnssection:
+    description:
+      - case-sensitive string for which section of the DNS reply to look in for the contentstring match
+      - values: answer, authority, additional, edns_options
+    default: answer
     type: str
   dnstype:
     description:
@@ -158,14 +185,27 @@ options:
       - String used for FTP, IMAP, POP, SMTP and SSH type checks.
       - Note that this is going to be passed back and forth in the data, so you should always be sure that credentials used for checks are very limited in their access level.
     type: str
+  query:
+    description:
+      - optional string for PGSQL and MYSQL check types. SQL query to send to the database server
+    type: str
   secure:
     description:
       - Specify whether the IMAP, SMTP, and POP checks should use TLS for the check.
     type: bool
+  sshkey:
+    description:
+      - specify the ID of an SSH private key to be used in the SSH check
+    type: str
   verify:
     description:
       - Set whether or not to verify the certificate
     type: bool
+  hosts:
+    description:
+      - Object for specifying host information for the redis check
+      - Example: "hosts": {"HSGWNS": {"host": "redis1.example.com", "port": 6379}}
+    type: dict
   ignore:
     description:
       - Optional string for the RBL check type, specifies RBL lists to ignore.
@@ -202,6 +242,14 @@ options:
     description:
       - Data that will be sent to the websocket
     type: str
+  database:
+    description:
+      - name of database
+    type: str
+  edns:
+    description:
+      - used to send EDNS(0) OPT pseudo-records in a DNS query in the DOHDOT check type
+    type: dict
   receiveheaders:
     description:
       - Optional objects used by HTTPADV ('data' can also be used for CLUSTER.
@@ -226,6 +274,23 @@ options:
       - Specify if the check should run against an ipv6 address.
       - PING, HTTP, HTTPCONTENT, HTTPADV, WHOIS checks.
     type: bool
+  redistype:
+    description:
+      - Values: standalone, sentinel, or cluster
+    type: str
+  regex:
+    description:
+      - treat 'contentstring' as a regular expression if true
+    type: bool
+  sentinelname:
+    description:
+      - required if redistype is "sentinel"
+      - Set to the "master name" that is in your sentinel configuration
+    type: str
+  servername:
+    description:
+      - FQDN sent to SNI services in the SSL check
+    type: str
   snmpv:
     description:
       - String specifying the SNMP version the check should use.
@@ -431,6 +496,9 @@ def create_nodeping_check(parameters):
         data = parameters["websocketdata"]
         del parameters["websocketdata"]
 
+    if "mute" in parameters.keys():
+        parameters.update({"mute": set_mute_timestamp(parameters["mute"])})
+
     passed_args = {arg: parameters[arg] for arg in func_args.args if arg in parameters}
 
     args = {}
@@ -536,6 +604,9 @@ def update_nodeping_check(parameters):
         if value != compare:
             changed = True
             update_fields.update({key: compare})
+
+    if "mute" in parameters.keys():
+        update_fields.update({"mute": set_mute_timestamp(parameters["mute"])})
 
     # Update the check
     result = update_checks.update(
@@ -680,6 +751,29 @@ def convert_contacts(notification_contacts, token, customerid):
 
     return return_contacts
 
+def set_mute_timestamp(mute):
+    """ Convert Mute time to timestamp
+    """
+
+    try:
+        mute_int = int(mute)
+        return mute_int
+    except ValueError:
+        if mute.upper().endswith("D"):
+            return int(time()*1000) + (int(mute[:-1]) * 86400000)
+        elif mute.upper().endswith("H"):
+            return int(time()*1000) + (int(mute[:-1]) * 3600000)
+        elif mute.upper().endswith("M"):
+            return int(time()*1000) + (int(mute[:-1]) * 60000)
+        elif mute.upper().endswith("S"):
+            return int(time()*1000) + int(mute[:-1])
+        elif mute.upper() == "ON" or "TRUE":
+            return True
+        elif mute.upper() == "OFF" or "FALSE":
+            return False
+        else:
+            return False
+
 
 def run_module():
     # define available arguments/parameters a user can pass to the module
@@ -701,8 +795,13 @@ def run_module():
         threshold=dict(type="int", required=False, default=5),
         sens=dict(type="int", required=False, default=2),
         dep=dict(type="str", required=False),
+        mute=dict(type="str", required=False, default="off"),
+        description=dict(type="str", required=False, default=None),
         checktoken=dict(type="str", required=False),
+        clientcert=dict(type="str", required=False),
         contentstring=dict(type="str", required=False),
+        dohdot=dict(type="str", required=False, default="doh"),
+        dnssection=dict(type="str", required=False, default="answer"),
         dnstype=dict(type="str", required=False),
         dnstoresolve=dict(type="str", required=False),
         dnsrd=dict(type="bool", required=False, default=True),
@@ -714,8 +813,11 @@ def run_module():
         port=dict(type="int", required=False),
         username=dict(type="str", required=False),
         password=dict(type="str", required=False, no_log=True),
+        query=dict(type="str", required=False),
         secure=dict(type="bool", required=False),
+        sshkey=dict(type="str", required=False),
         verify=dict(type="bool", required=False),
+        hosts=dict(type="dict", required=False),
         ignore=dict(type="str", required=False),
         invert=dict(type="bool", required=False, default=False),
         warningdays=dict(type="int", required=False),
@@ -725,6 +827,8 @@ def run_module():
         websocketdata=dict(type="str", required=False),
         receiveheaders=dict(type="dict", required=False),
         sendheaders=dict(type="dict", required=False),
+        database=dict(type="str", required=False),
+        edns=dict(type="dict", required=False),
         method=dict(
             type="str",
             required=False,
@@ -732,6 +836,10 @@ def run_module():
         ),
         statuscode=dict(type="int", required=False),
         ipv6=dict(type="bool", required=False),
+        redistype=dict(type="str", required=False),
+        regex=dict(type="str", required=False),
+        sentinelname=dict(type="str", required=False),
+        servername=dict(type="str", required=False),
         snmpv=dict(type="str", required=False, default="1", choices=["1", "2c"]),
         snmpcom=dict(type="str", required=False, default="public"),
         verifyvolume=dict(type="bool", required=False),
