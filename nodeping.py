@@ -10,7 +10,7 @@ from time import time
 from ansible.module_utils.basic import AnsibleModule
 
 ANSIBLE_METADATA = {
-    "metadata_version": "1.3",
+    "metadata_version": "2.0",
     "status": ["stableinterface"],
     "supported_by": "community",
 }
@@ -425,9 +425,7 @@ else:
 
 
 def get_nodeping_check(parameters):
-    """ Gets the user defined check by its checkid
-    """
-
+    """Get the user defined check by its checkid."""
     token = parameters["token"]
     customerid = parameters["customerid"]
     checkid = parameters["checkid"]
@@ -464,9 +462,7 @@ def get_nodeping_check(parameters):
 
 
 def create_nodeping_check(parameters):
-    """ Creates a check with NodePing based on parameters passed in via Ansible
-    """
-
+    """Create a NodePing check."""
     token = parameters["token"]
     customerid = parameters["customerid"]
     name = parameters["label"]
@@ -536,9 +532,7 @@ def create_nodeping_check(parameters):
 
 
 def update_nodeping_check(parameters):
-    """ Updates an existing check based on parameters passed in via Ansible
-    """
-
+    """Update an existing NodePing check."""
     update_fields = {}
     changed = False
 
@@ -552,7 +546,7 @@ def update_nodeping_check(parameters):
     checktype = check_info["type"]
 
     # Removes all values that are not provided by the user
-    stripped_params = {key: value for (key, value) in parameters.items() if value}
+    stripped_params = {key: value for (key, value) in parameters.items() if value is not None}
 
     for key, value in check_info.items():
         try:
@@ -605,6 +599,14 @@ def update_nodeping_check(parameters):
             changed = True
             update_fields.update({key: compare})
 
+    if "enabled" in stripped_params.keys():
+        enabled = stripped_params["enabled"]
+
+        if enabled != check_info["enable"]:
+            changed = True
+
+        update_fields.update({"enabled": enabled})
+
     if "mute" in parameters.keys():
         update_fields.update({"mute": set_mute_timestamp(parameters["mute"])})
 
@@ -623,9 +625,7 @@ def update_nodeping_check(parameters):
 
 
 def delete_nodeping_check(parameters):
-    """ Deletes an existing check based on parameters passed in via Ansible
-    """
-
+    """Delete an existing NodePing check."""
     token = parameters["token"]
     checkid = parameters["checkid"]
     customerid = parameters["customerid"]
@@ -641,8 +641,7 @@ def delete_nodeping_check(parameters):
 
 
 def convert_contacts(notification_contacts, token, customerid):
-    """ Takes in a contact/group list and converts to the expected IDs
-    """
+    """Take in a contact/group list and converts to the expected IDs"""
 
     def _get_contact_schedule(contact_name, contact, account_contacts):
         """
@@ -787,26 +786,26 @@ def run_module():
         action=dict(
             type="str", required=True, choices=["get", "create", "update", "delete"]
         ),
-        interval=dict(type="int", required=False, default=15),
-        enabled=dict(type="bool", required=False, default=True),
-        public=dict(type="bool", required=False, default=False),
+        interval=dict(type="int", required=False),
+        enabled=dict(type="bool", required=False),
+        public=dict(type="bool", required=False),
         runlocations=dict(type="str", required=False),
         homeloc=dict(type="str", required=False),
-        threshold=dict(type="int", required=False, default=5),
-        sens=dict(type="int", required=False, default=2),
+        threshold=dict(type="int", required=False),
+        sens=dict(type="int", required=False),
         dep=dict(type="str", required=False),
         mute=dict(type="str", required=False, default="off"),
-        description=dict(type="str", required=False, default=None),
+        description=dict(type="str", required=False),
         checktoken=dict(type="str", required=False),
         clientcert=dict(type="str", required=False),
         contentstring=dict(type="str", required=False),
-        dohdot=dict(type="str", required=False, default="doh"),
-        dnssection=dict(type="str", required=False, default="answer"),
+        dohdot=dict(type="str", required=False),
+        dnssection=dict(type="str", required=False),
         dnstype=dict(type="str", required=False),
         dnstoresolve=dict(type="str", required=False),
-        dnsrd=dict(type="bool", required=False, default=True),
+        dnsrd=dict(type="bool", required=False),
         transport=dict(
-            type="str", required=False, default="udp", choices=["udp", "tcp"]
+            type="str", required=False, choices=["udp", "tcp"]
         ),
         follow=dict(type="bool", required=False),
         email=dict(type="str", required=False),
@@ -819,7 +818,7 @@ def run_module():
         verify=dict(type="bool", required=False),
         hosts=dict(type="dict", required=False),
         ignore=dict(type="str", required=False),
-        invert=dict(type="bool", required=False, default=False),
+        invert=dict(type="bool", required=False),
         warningdays=dict(type="int", required=False),
         fields=dict(type="dict", required=False),
         postdata=dict(type="str", required=False),
@@ -840,14 +839,14 @@ def run_module():
         regex=dict(type="str", required=False),
         sentinelname=dict(type="str", required=False),
         servername=dict(type="str", required=False),
-        snmpv=dict(type="str", required=False, default="1", choices=["1", "2c"]),
-        snmpcom=dict(type="str", required=False, default="public"),
+        snmpv=dict(type="str", required=False, choices=["1", "2c"]),
+        snmpcom=dict(type="str", required=False),
         verifyvolume=dict(type="bool", required=False),
         volumein=dict(type="int", required=False),
         whoisserver=dict(type="str", required=False),
         notifications=dict(type="list", required=False),
-        notifydelay=dict(type="int", required=False, default=0),
-        notifyschedule=dict(type="str", required=False, default="All the time"),
+        notifydelay=dict(type="int", required=False),
+        notifyschedule=dict(type="str", required=False),
     )
 
     # seed the result dict in the object

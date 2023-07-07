@@ -8,7 +8,7 @@ import traceback
 from ansible.module_utils.basic import AnsibleModule
 
 ANSIBLE_METADATA = {
-    "metadata_version": "1.0",
+    "metadata_version": "2.0",
     "status": ["preview"],
     "supported_by": "community",
 }
