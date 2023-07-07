@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 Fixed an issue in the nodeping module where updating a check to be enabled or disabled
 would not work properly
 
+### Changed
+
+Removed Python 2 support
+
 ## [2022-11-16]
 
 ### Added

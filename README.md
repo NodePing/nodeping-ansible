@@ -12,9 +12,6 @@ you will have to have the nodeping-api library installed on the system that
 will be handling your NodePing checks. You can install the library with pip:
 
 ``` sh
-# python2
-pip install nodeping-api
-
 # python3
 pip3 install nodeping-api
 
