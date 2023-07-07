@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 (Placeholder for unreleased content)
 
+## [2023-07-07]
+
+### Fixed
+
+Fixed an issue in the nodeping module where updating a check to be enabled or disabled
+would not work properly
+
 ## [2022-11-16]
 
 ### Added
