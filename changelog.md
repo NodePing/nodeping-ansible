@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 (Placeholder for unreleased content)
 
+## [2023-07-10]
+
+###
+
+Fixed muting/unmuting to match Ansible booleans properly
+
 ## [2023-07-07]
 
 ### Fixed
