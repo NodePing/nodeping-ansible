@@ -754,10 +754,9 @@ def set_mute_timestamp(mute):
     """ Convert Mute time to timestamp
     """
 
-    try:
-        mute_int = int(mute)
-        return mute_int
-    except ValueError:
+    if isinstance(mute, int):
+        return mute
+    else:
         if mute.upper().endswith("D"):
             return int(time()*1000) + (int(mute[:-1]) * 86400000)
         elif mute.upper().endswith("H"):
@@ -766,9 +765,9 @@ def set_mute_timestamp(mute):
             return int(time()*1000) + (int(mute[:-1]) * 60000)
         elif mute.upper().endswith("S"):
             return int(time()*1000) + int(mute[:-1])
-        elif mute.upper() == "ON" or "TRUE":
+        elif mute.upper() == "TRUE" or mute.upper() == "YES":
             return True
-        elif mute.upper() == "OFF" or "FALSE":
+        elif mute.upper() == "FALSE" or mute.upper() == "NO":
             return False
         else:
             return False
