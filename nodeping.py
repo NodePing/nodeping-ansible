@@ -588,6 +588,15 @@ def update_nodeping_check(parameters):
 
             continue
 
+        if key == "mute":
+            mute = set_mute_timestamp(stripped_params["mute"])
+
+            if mute != check_info["mute"]:
+                changed = True
+                update_fields.update({"mute": mute})
+
+            continue
+
         # Always pass the provided dependency because not passing it will
         # remove the dependency from the existing check
         if key == "dep":
@@ -601,14 +610,20 @@ def update_nodeping_check(parameters):
 
     if "enabled" in stripped_params.keys():
         enabled = stripped_params["enabled"]
+        if enabled is True:
+            check_enable = "active"
+            ret_enabled = "true"
+        elif enabled is False:
+            check_enable = "inactive"
+            ret_enabled = "false"
+        else:
+            check_enable = "inactive"
+            ret_enabled = "false"
 
-        if enabled != check_info["enable"]:
+        if check_enable != check_info["enable"]:
             changed = True
 
-        update_fields.update({"enabled": enabled})
-
-    if "mute" in parameters.keys():
-        update_fields.update({"mute": set_mute_timestamp(parameters["mute"])})
+        update_fields.update({"enabled": ret_enabled})
 
     # Update the check
     result = update_checks.update(
