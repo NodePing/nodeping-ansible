@@ -5,9 +5,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 (Placeholder for unreleased content)
 
+## [2023-07-12]
+
+### Fixed
+
+Checking "changed" status on enabling and muting checks
+
 ## [2023-07-10]
 
-###
+### Fixed
 
 Fixed muting/unmuting to match Ansible booleans properly
 

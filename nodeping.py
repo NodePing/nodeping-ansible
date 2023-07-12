@@ -10,7 +10,7 @@ from time import time
 from ansible.module_utils.basic import AnsibleModule
 
 ANSIBLE_METADATA = {
-    "metadata_version": "2.0",
+    "metadata_version": "2.2",
     "status": ["stableinterface"],
     "supported_by": "community",
 }
