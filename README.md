@@ -8,18 +8,18 @@ manage your checks.
 
 To use this module, you will have to place the `nodeping.py` file in your
 modules directory (the `library` variable in your ansible.cfg file). In addition,
-you will have to have the nodeping-api library installed on the system that
+you will have to have the `nodepingpy` library installed on the system that
 will be handling your NodePing checks. You can install the library with pip:
 
 ``` sh
 # python3
-pip3 install nodeping-api
+pip3 install nodepingpy
 
 # Alternate python3
-python3 -m pip install nodeping-api
+python3 -m pip install nodepingpy
 ```
 
-The repository can be found [here](https://github.com/NodePing/python-nodeping-api)
+The repository can be found [here](https://github.com/NodePing/nodepingpy)
 
 It is recommended that you configure your playbook to create/update/delete checks
 from the host you are running your playbooks from (shown in examples below). This is
@@ -33,7 +33,7 @@ repository.
 
 ### Running Locally
 
-This method will allow you to run your playbooks, but you won't need the nodeping-api 
+This method will allow you to run your playbooks, but you won't need the nodepingpy
 code installed on your target machines. This is done by delegating the nodeping tasks
 to localhost.
 
@@ -67,7 +67,7 @@ to localhost.
 ### Running Remotely
 
 This method doesn't require you to include the `delegate_to` for each `nodeping` task,
-but it will require that the Python nodeping-api is installed remotely on each machine.
+but it will require that the Python nodepingpy is installed remotely on each machine.
 
 ``` yaml
 - hosts: test

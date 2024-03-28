@@ -10,7 +10,7 @@ from time import time
 from ansible.module_utils.basic import AnsibleModule
 
 ANSIBLE_METADATA = {
-    "metadata_version": "2.2",
+    "metadata_version": "3.0",
     "status": ["stableinterface"],
     "supported_by": "community",
 }
@@ -26,7 +26,7 @@ version_added: "2.5"
 description:
     - This module will let you get, create, update, or delete checks on your NodePing account
 requirements:
-    - "The NodePing Python library: https://github.com/NodePing/python-nodeping-api"
+    - "The NodePing Python library: https://github.com/NodePing/nodepingpy"
 
 options:
   token:
@@ -235,7 +235,7 @@ options:
     type: str
   data:
     description:
-      - Optional objects used by HTTPADV ('data' can also be used for CLUSTER.
+      - Optional objects used by HTTPADV ('data') can also be used for CLUSTER.
       - They are formatted as key:value pairs.
     type: dict
   websocketdata:
@@ -409,14 +409,7 @@ message:
 NODEPING_IMPORT_ERROR = None
 
 try:
-    from nodeping_api import (
-        get_checks,
-        contacts,
-        create_check,
-        update_checks,
-        delete_checks,
-        group_contacts,
-    )
+    import nodepingpy
 except ImportError:
     NODEPING_IMPORT_ERROR = traceback.format_exc()
     IMPORTED_NODEPING_API = False
@@ -429,28 +422,21 @@ def get_nodeping_check(parameters):
     token = parameters["token"]
     customerid = parameters["customerid"]
     checkid = parameters["checkid"]
-    try:
-        label = parameters["label"]
-    except KeyError:
-        label = None
 
-    # Setting checkid do none gets all checks
-    if checkid:
-        if checkid.lower() == "all":
-            checkid = None
-
-    query = get_checks.GetChecks(token, checkid=checkid, customerid=customerid)
-
-    if checkid:
-        result = query.get_by_id()
-    else:
-        result = query.all_checks()
-
-    if label:
-        for _key, value in result.items():
-            if value.get("label") == label:
+    if checkid and checkid.lower() == "all":
+        result = nodepingpy.checks.get_all(token, customerid)
+    elif checkid:
+        result = nodepingpy.checks.get_by_id(token, checkid, customerid)
+    elif parameters["label"] and not checkid:
+        get_checks = nodepingpy.checks.get_all(token, customerid)
+        for _, value in get_checks.items():
+            if value["label"] == parameters["label"]:
                 result = value
-                continue
+                break
+            else:
+                result = {"error": "Check ID label not found"}
+    else:
+        result = nodepingpy.checks.get_all(token, customerid)
 
     try:
         result.update({"changed": True})
@@ -465,61 +451,45 @@ def create_nodeping_check(parameters):
     """Create a NodePing check."""
     token = parameters["token"]
     customerid = parameters["customerid"]
-    name = parameters["label"]
-    checktype = "%s_check" % parameters["checktype"].lower()
-
-    create_functions = [
-        func for func in inspect.getmembers(create_check) if inspect.isfunction(func[1])
-    ]
-
-    for funcs in create_functions:
-        if checktype == funcs[0]:
-            func_location = funcs[1]
-
-    # Get the args so we can collect them and throw out the stuff that isn't
-    # defined by the user in their playbook
-    try:
-        func_args = inspect.getfullargspec(func_location)
-    except AttributeError:
-        # Kept for python 2 compatibility
-        func_args = inspect.getargspec(func_location)
+    name = parameters["label"] or parameters["target"]
+    checktype = parameters["checktype"].upper()
+    classname = "{}Check".format(checktype.title())
+    (_, checkclass) = [
+        func
+        for func in inspect.getmembers(nodepingpy.checktypes)
+        if inspect.isclass(func[1]) and func[0] == classname
+    ][0]
 
     # websocketdata isn't part of the API but is necessary to get the data in
     # string format for the 'data' key. This is a workaround to ensure the
     # NodePing API gets the expected data key, and make sure the Ansible
     # module is happy with the other `data` keys that are a dict.
-    if checktype == "websocket":
-        data = parameters["websocketdata"]
+    if checktype == "WEBSOCKET":
+        parameters.update({"data": parameters["websocketdata"]})
         del parameters["websocketdata"]
 
-    if "mute" in parameters.keys():
+    if parameters["mute"]:
         parameters.update({"mute": set_mute_timestamp(parameters["mute"])})
-
-    passed_args = {arg: parameters[arg] for arg in func_args.args if arg in parameters}
-
-    args = {}
-    for key, value in passed_args.items():
-        if value:
-            args.update({key: value})
-
-    # websocket `data` is a str, so we add the data k/v pair back to args
-    if checktype == "websocket":
-        args.update({"data": data})
 
     # Get contacts & notification schedules if they exist
     if parameters["notifications"]:
-
         notifications = parameters["notifications"]
 
         if not isinstance(notifications, list):
             notifications = [notifications]
 
-        args.update(
+        parameters.update(
             {"notifications": convert_contacts(notifications, token, customerid)}
         )
 
-    # Match the function name and its args to the function list above
-    result = func_location(**args)
+    args_dict = {}
+    check_keys = checkclass.__annotations__.keys()
+
+    for key in parameters.keys():
+        if key in check_keys:
+            args_dict.update({key: parameters[key]})
+
+    result = nodepingpy.checks.create_check(token, checkclass(**args_dict), customerid)
 
     try:
         created = bool(result["created"])
@@ -540,13 +510,13 @@ def update_nodeping_check(parameters):
     check_id = parameters["checkid"]
     label = parameters["label"]
     customerid = parameters["customerid"]
-    query = get_checks.GetChecks(token, checkid=check_id, customerid=customerid)
-
-    check_info = query.get_by_id()
+    check_info = nodepingpy.checks.get_by_id(token, check_id, customerid)
     checktype = check_info["type"]
 
     # Removes all values that are not provided by the user
-    stripped_params = {key: value for (key, value) in parameters.items() if value is not None}
+    stripped_params = {
+        key: value for (key, value) in parameters.items() if value is not None
+    }
 
     for key, value in check_info.items():
         try:
@@ -626,8 +596,8 @@ def update_nodeping_check(parameters):
         update_fields.update({"enabled": ret_enabled})
 
     # Update the check
-    result = update_checks.update(
-        token, check_id, checktype, update_fields, customerid=customerid
+    result = nodepingpy.checks.update_check(
+        token, check_id, checktype, update_fields, customerid
     )
     result.update({"changed": changed})
 
@@ -645,7 +615,7 @@ def delete_nodeping_check(parameters):
     checkid = parameters["checkid"]
     customerid = parameters["customerid"]
 
-    result = delete_checks.remove(token, checkid, customerid=customerid)
+    result = nodepingpy.checks.delete_check(token, checkid, customerid)
 
     try:
         result["error"]
@@ -702,7 +672,7 @@ def convert_contacts(notification_contacts, token, customerid):
                     continue
 
     def _get_key_schedule(contact_name, contact, queried_contacts):
-        """ Evaluates Ansible input and returns proper contact groups
+        """Evaluates Ansible input and returns proper contact groups
         to pass to NodePing API
 
         :param contact: The individual contact to be evaluated
@@ -742,8 +712,8 @@ def convert_contacts(notification_contacts, token, customerid):
     return_contacts = []
 
     # Retrieve full contacts list for account/subaccount
-    account_contacts = contacts.get_all(token, customerid=customerid)
-    groups = group_contacts.get_all(token, customerid=customerid)
+    account_contacts = nodepingpy.contacts.get_all(token, customerid)
+    groups = nodepingpy.contactgroups.get_all(token, customerid)
 
     # Compare each contact name and its addresses to the contact name
     # and addresses provided in playbook.
@@ -765,21 +735,21 @@ def convert_contacts(notification_contacts, token, customerid):
 
     return return_contacts
 
+
 def set_mute_timestamp(mute):
-    """ Convert Mute time to timestamp
-    """
+    """Convert Mute time to timestamp"""
 
     if isinstance(mute, int):
         return mute
     else:
         if mute.upper().endswith("D"):
-            return int(time()*1000) + (int(mute[:-1]) * 86400000)
+            return int(time() * 1000) + (int(mute[:-1]) * 86400000)
         elif mute.upper().endswith("H"):
-            return int(time()*1000) + (int(mute[:-1]) * 3600000)
+            return int(time() * 1000) + (int(mute[:-1]) * 3600000)
         elif mute.upper().endswith("M"):
-            return int(time()*1000) + (int(mute[:-1]) * 60000)
+            return int(time() * 1000) + (int(mute[:-1]) * 60000)
         elif mute.upper().endswith("S"):
-            return int(time()*1000) + int(mute[:-1])
+            return int(time() * 1000) + int(mute[:-1])
         elif mute.upper() == "TRUE" or mute.upper() == "YES":
             return True
         elif mute.upper() == "FALSE" or mute.upper() == "NO":
@@ -818,9 +788,7 @@ def run_module():
         dnstype=dict(type="str", required=False),
         dnstoresolve=dict(type="str", required=False),
         dnsrd=dict(type="bool", required=False),
-        transport=dict(
-            type="str", required=False, choices=["udp", "tcp"]
-        ),
+        transport=dict(type="str", required=False, choices=["udp", "tcp"]),
         follow=dict(type="bool", required=False),
         email=dict(type="str", required=False),
         port=dict(type="int", required=False),
@@ -878,7 +846,7 @@ def run_module():
 
     if not IMPORTED_NODEPING_API:
         module.fail_json(
-            msg="Missing import lib: nodeping-api", exception=NODEPING_IMPORT_ERROR
+            msg="Missing import lib: nodepingpy", exception=NODEPING_IMPORT_ERROR
         )
 
     # if the user is working with this module in only check mode we do not

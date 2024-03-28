@@ -8,7 +8,7 @@ import traceback
 from ansible.module_utils.basic import AnsibleModule
 
 ANSIBLE_METADATA = {
-    "metadata_version": "2.0",
+    "metadata_version": "3.0",
     "status": ["preview"],
     "supported_by": "community",
 }
@@ -27,7 +27,7 @@ description:
       More info on maintenance can be found here:
       https://nodeping.com/docs-api-maintenance.html
 requirements:
-    - "The NodePing Python library: https://github.com/NodePing/python-nodeping-api"
+    - "The NodePing Python library: https://github.com/NodePing/nodepingpy"
 
 options:
   token:
@@ -114,7 +114,8 @@ message:
 NODEPING_IMPORT_ERROR = None
 
 try:
-    from nodeping_api import maintenance
+    from nodepingpy import maintenance
+    from nodepingpy.nptypes import maintenancetypes
 except ImportError:
     NODEPING_IMPORT_ERROR = traceback.format_exc()
     IMPORTED_NODEPING_API = False
@@ -123,29 +124,20 @@ else:
 
 
 def configure_maintenance(parameters):
-    """ Create a scheduled or ad-hoc maintenance
-    """
+    """Create a scheduled or ad-hoc maintenance."""
 
     if parameters["scheduled"]:
-        parameters.update({"_id": None})
-
-        if not parameters["cron"]:
-            return (
-                False,
-                parameters["name"],
-                "cron required for scheduled maintenance",
-            )
+        args_dict = generate_data(
+            parameters, maintenancetypes.ScheduledCreate.__annotations__.keys()
+        )
+        data = maintenancetypes.ScheduledCreate(**args_dict)
     else:
-        parameters.update({"_id": "ad-hoc"})
+        args_dict = generate_data(
+            parameters, maintenancetypes.AdHocCreate.__annotations__.keys()
+        )
+        data = maintenancetypes.AdHocCreate(**args_dict)
 
-    del parameters["scheduled"]
-
-    args = {}
-    for key, value in parameters.items():
-        if value:
-            args.update({key: value})
-
-    result = maintenance.create_maintenance(**args)
+    result = maintenance.create(parameters["token"], data, parameters["customerid"])
 
     if "error" in result.keys():
         result.update({"changed": False})
@@ -153,6 +145,15 @@ def configure_maintenance(parameters):
     else:
         result.update({"changed": True})
         return (True, parameters["name"], result)
+
+
+def generate_data(parameters, matchkeys):
+    return_dict = {}
+    for key in parameters.keys():
+        if key in matchkeys:
+            return_dict.update({key: parameters[key]})
+
+    return return_dict
 
 
 def run_module():
@@ -183,7 +184,7 @@ def run_module():
 
     if not IMPORTED_NODEPING_API:
         module.fail_json(
-            msg="Missing import lib: nodeping-api", exception=NODEPING_IMPORT_ERROR
+            msg="Missing import lib: nodepingpy", exception=NODEPING_IMPORT_ERROR
         )
 
     # if the user is working with this module in only check mode we do not
