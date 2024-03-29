@@ -628,112 +628,54 @@ def delete_nodeping_check(parameters):
 def convert_contacts(notification_contacts, token, customerid):
     """Take in a contact/group list and converts to the expected IDs"""
 
-    def _get_contact_schedule(contact_name, contact, account_contacts):
-        """
-        {'contact': '4RF81', 'notifydelay': 0, 'notifyschedule': 'testwindow'}
-        """
+    # notification_contacts [{'contact': 'RCMXLQR8', 'notifydelay': 0, 'notifyschedule': 'All the time'}]
+    all_contacts = []
+    account_contacts = account_groups = {}
+    #account_notificationprofiles = {}
 
-        delay = contact["notifydelay"]
-        schedule = contact["notifyschedule"]
-
-        # NOTE: There could be many contacts with these names but with
-        # different contact ID keys. That means there's potential for
-        # duplicates existing in the account, and if there is a duplicate,
-        # this will only grab the first match. That means it is suggested
-        # a user supplies the contact ID that can be acquired by the API.
-        for _, value in account_contacts.items():
-            # Some contacts might not have a name field.
-            # Time to guess and check
-            try:
-                name = value["name"].rstrip()
-            except KeyError:
-                name = None
-
-            # If a contactname was provided,
-            # look for addresses under that contact
-            if name:
-                if contact_name == name:
-                    addresses = value["addresses"]
-                else:
-                    continue
-
-                # If the address matches, pair the contact ID with the
-                # Delay and schedule
-                for _id, info in addresses.items():
-                    if info["address"] == contact["address"]:
-                        return {_id: {"delay": delay, "schedule": schedule}}
-            else:
-                addresses = value["addresses"]
-
-                for _id, info in addresses.items():
-                    if info["address"] == contact_name:
-                        return {_id: {"delay": delay, "schedule": schedule}}
-
-                    continue
-
-    def _get_key_schedule(contact_name, contact, queried_contacts):
-        """Evaluates Ansible input and returns proper contact groups
-        to pass to NodePing API
-
-        :param contact: The individual contact to be evaluated
-        :type contact: dict
-        :param account_groups: All contact group info queried from API
-        :type account_groups: dict
-        :return: A group contact combined with its delay and schedule
-        :rtype: dict
-        """
-
-        delay = contact["notifydelay"]
-        schedule = contact["notifyschedule"]
-        _id = contact[contact_name]
-
-        keyname = None
-
-        if contact_name == "group":
-            if _id in queried_contacts.keys():
-                keyname = _id
-            else:
-                for key, value in queried_contacts.items():
-                    if _id == value["name"]:
-                        keyname = key
-
-        elif contact_name == "contact":
-            for key, value in queried_contacts.items():
-                if _id in value["addresses"].keys():
-                    keyname = _id
-
-        if keyname:
-            return {keyname: {"delay": delay, "schedule": schedule}}
-
-        return {"error": "No matching key on account %s" % contact_name}
-
-    # End of _get_group_schedule function
-
-    return_contacts = []
-
-    # Retrieve full contacts list for account/subaccount
-    account_contacts = nodepingpy.contacts.get_all(token, customerid)
-    groups = nodepingpy.contactgroups.get_all(token, customerid)
-
-    # Compare each contact name and its addresses to the contact name
-    # and addresses provided in playbook.
     for contact in notification_contacts:
+        if "name" in contact.keys():
+            if not account_contacts:
+                account_contacts = nodepingpy.contacts.get_all(token, customerid)
 
-        # If the key is group, then it is a group contact ID
-        if contact.get("group"):
-            return_contacts.append(_get_key_schedule("group", contact, groups))
-        # If the key is contact, it is a contact ID
-        elif contact.get("contact"):
-            return_contacts.append(
-                _get_key_schedule("contact", contact, account_contacts)
-            )
-        # If the key is name, it is a contact name and we have to find the ID
-        elif contact.get("name"):
-            return_contacts.append(
-                _get_contact_schedule(contact["name"], contact, account_contacts)
-            )
+            for _, value in account_contacts.items():
+                if contact["name"] == value["name"]:
+                    for key, address in value["addresses"].items():
+                        if address["address"] == contact["address"]:
+                            all_contacts += [
+                                {
+                                    key: {
+                                        "schedule": contact["notifyschedule"],
+                                        "delay": contact["notifydelay"]
+                                    }
+                                }
+                            ]
+        elif "group" in contact.keys():
+            if not account_contacts:
+                account_groups = nodepingpy.contactgroups.get_all(token, customerid)
 
-    return return_contacts
+            for key, value in account_groups.items():
+                if value["name"] == contact["group"] or key == contact["group"]:
+                    all_contacts += [
+                        {
+                            key: {
+                                "schedule": contact["notifyschedule"],
+                                "delay": contact["notifydelay"]
+                            }
+                        }
+                    ]
+        #elif (
+        #    "notificationprofile" in contact.keys() and not account_notificationprofiles
+        #):
+        #    account_notificationprofiles = nodepingpy.notificationprofiles.get_all(
+        #        token, customerid
+        #    )
+        elif "contact" in contact.keys():
+            all_contacts += [{contact["contact"]: {"schedule": contact["notifyschedule"], "delay": contact["notifydelay"]}}]
+        else:
+            continue
+
+    return all_contacts
 
 
 def set_mute_timestamp(mute):
