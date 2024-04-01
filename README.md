@@ -62,6 +62,7 @@ to localhost.
         - contact: 4QT82
           notifydelay: 0
           notifyschedule: All the time
+        - notificationprofile: 201205050153W2Q4C-P-3JKXH
 ```
 
 ### Running Remotely
@@ -81,9 +82,9 @@ but it will require that the Python nodepingpy is installed remotely on each mac
         name: python-pip
         state: present
         
-    - name: Install nodeping-api
+    - name: Install nodepingpy
       pip:
-        name: nodeping-api
+        name: nodepingpy
         state: present
         
     - name: Test create a NodePing HTTP check

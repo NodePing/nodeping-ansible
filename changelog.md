@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 (Placeholder for unreleased content)
 
+## [2024-04-01]
+
+### Fixed
+
+Documentation corrected to match functionality and existing test playbooks
+
+### Added
+
+* Create and update checks with `notificationprofile` contacts.
+
+###  Changed
+
+Swithched the dependency to [nodepingpy](https://github.com/NodePing/nodepingpy)
+
+
 ## [2023-07-12]
 
 ### Fixed
