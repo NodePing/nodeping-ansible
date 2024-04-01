@@ -358,6 +358,7 @@ EXAMPLES = """
       - group: 201205050153W2Q4C-G-3QJWG
         notifydelay: 15
         notifyschedule: All the time
+      - notificationprofile: 201205050153W2Q4C-P-3JKXH
 
 # Create a DNS check with a contact group for notifications with Daytime alerts
 - name: Create DNS check to check every 5 minutes
@@ -374,6 +375,7 @@ EXAMPLES = """
     - group: mygroup
       notifydelay: 0
       notifyschedule: Daytime
+    - notificationprofile: My Awesome Profile
 
 # Modify a check based on its checkid
 - name: Modify an existing check to ping IPv6
@@ -625,8 +627,7 @@ def convert_contacts(notification_contacts, token, customerid):
 
     # notification_contacts [{'contact': 'RCMXLQR8', 'notifydelay': 0, 'notifyschedule': 'All the time'}]
     all_contacts = []
-    account_contacts = account_groups = {}
-    #account_notificationprofiles = {}
+    account_contacts = account_groups = account_notificationprofiles = {}
 
     for contact in notification_contacts:
         if "name" in contact.keys():
@@ -659,12 +660,20 @@ def convert_contacts(notification_contacts, token, customerid):
                             }
                         }
                     ]
-        #elif (
-        #    "notificationprofile" in contact.keys() and not account_notificationprofiles
-        #):
-        #    account_notificationprofiles = nodepingpy.notificationprofiles.get_all(
-        #        token, customerid
-        #    )
+        elif "notificationprofile" in contact.keys():
+            if not account_notificationprofiles:
+                account_notificationprofiles = nodepingpy.notificationprofiles.get_all(token, customerid)
+
+            for key, value in account_notificationprofiles.items():
+                if value["name"] == contact["notificationprofile"] or key == contact["notificationprofile"]:
+                    all_contacts += [
+                        {
+                            key: {
+                                "schedule": "All",
+                                "delay": 0
+                            }
+                        }
+                    ]
         elif "contact" in contact.keys():
             all_contacts += [{contact["contact"]: {"schedule": contact["notifyschedule"], "delay": contact["notifydelay"]}}]
         else:
