@@ -349,21 +349,15 @@ EXAMPLES = """
         address: me@example.com
         notifydelay: 3
         notifyschedule: All the time
-        contacttype: contact
-      - name: My Group
+      - group: My Group
         notifydelay: 0
         notifyschedule: Nights
-        contacttype: group
-      - name: name not important here
-        contactid: BKPGH
+      - contact: BKPGH
         notifydelay: 0
         notifyschedule: Days
-        contacttype: contact
-      - name: name also not important
-        contactid: 201205050153W2Q4C-G-3QJWG
+      - group: 201205050153W2Q4C-G-3QJWG
         notifydelay: 15
         notifyschedule: All the time
-        contacttype: group
 
 # Create a DNS check with a contact group for notifications with Daytime alerts
 - name: Create DNS check to check every 5 minutes
@@ -376,9 +370,10 @@ EXAMPLES = """
     dnstype: A
     dnstoresolve: example.com
     contentstring: 123.231.100.5
-    contactgroup: mygroup
-    notifydelay: 0
-    notifyschedule: Daytime
+    notifications:
+    - group: mygroup
+      notifydelay: 0
+      notifyschedule: Daytime
 
 # Modify a check based on its checkid
 - name: Modify an existing check to ping IPv6
