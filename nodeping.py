@@ -657,7 +657,7 @@ def convert_contacts(notification_contacts, token, customerid):
                                 }
                             ]
         elif "group" in contact.keys():
-            if not account_contacts:
+            if not account_groups:
                 account_groups = nodepingpy.contactgroups.get_all(token, customerid)
 
             for key, value in account_groups.items():
