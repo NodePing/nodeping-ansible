@@ -334,61 +334,69 @@ author:
 """
 
 EXAMPLES = """
-# Create a ping check to check every minute with single contact
-- name: Create a ping check with 3 minute notification delay
-  nodeping:
-    action: create
-    checktype: PING
-    label: ping_my_host
-    target: example.com
-    interval: 1
-    enabled: yes
-    runlocations: nam
-    notifications:
-      - name: My Email
-        address: me@example.com
-        notifydelay: 3
-        notifyschedule: All the time
-      - group: My Group
-        notifydelay: 0
-        notifyschedule: Nights
-      - contact: BKPGH
-        notifydelay: 0
-        notifyschedule: Days
-      - group: 201205050153W2Q4C-G-3QJWG
-        notifydelay: 15
-        notifyschedule: All the time
-      - notificationprofile: 201205050153W2Q4C-P-3JKXH
+---
+- hosts: localhost
 
-# Create a DNS check with a contact group for notifications with Daytime alerts
-- name: Create DNS check to check every 5 minutes
-  nodeping:
-    action: create
-    checktype: DNS
-    label: dns_query
-    target: ns1.example.com
-    interval: 5
-    dnstype: A
-    dnstoresolve: example.com
-    contentstring: 123.231.100.5
-    notifications:
-    - group: mygroup
-      notifydelay: 0
-      notifyschedule: Daytime
-    - notificationprofile: My Awesome Profile
+  vars:
+    nodeping_api_token: your-token-here
 
-# Modify a check based on its checkid
-- name: Modify an existing check to ping IPv6
-  nodeping:
-    action: update
-    checkid: 201205050153W2Q4C-0J2HSIRF
-    ipv6: yes
+  tasks:
 
-# Delete a check
-- name: Delete this check based on its ID
-  nodeping:
-    action: delete
-    checkid: 201205050153W2Q4C-0J2HSIRF
+    # Create a ping check to check every minute with single contact
+    - name: Create a ping check with 3 minute notification delay
+      nodeping:
+        action: create
+        checktype: PING
+        label: ping_my_host
+        target: example.com
+        interval: 1
+        enabled: yes
+        runlocations: nam
+        notifications:
+          - name: My Email
+            address: me@example.com
+            notifydelay: 3
+            notifyschedule: All the time
+          - group: My Group
+            notifydelay: 0
+            notifyschedule: Nights
+          - contact: BKPGH
+            notifydelay: 0
+            notifyschedule: Days
+          - group: 201205050153W2Q4C-G-3QJWG
+            notifydelay: 15
+            notifyschedule: All the time
+          - notificationprofile: 201205050153W2Q4C-P-3JKXH
+    
+    # Create a DNS check with a contact group for notifications with Daytime alerts
+    - name: Create DNS check to check every 5 minutes
+      nodeping:
+        action: create
+        checktype: DNS
+        label: dns_query
+        target: ns1.example.com
+        interval: 5
+        dnstype: A
+        dnstoresolve: example.com
+        contentstring: 123.231.100.5
+        notifications:
+        - group: mygroup
+          notifydelay: 0
+          notifyschedule: Daytime
+        - notificationprofile: My Awesome Profile
+    
+    # Modify a check based on its checkid
+    - name: Modify an existing check to ping IPv6
+      nodeping:
+        action: update
+        checkid: 201205050153W2Q4C-0J2HSIRF
+        ipv6: yes
+    
+    # Delete a check
+    - name: Delete this check based on its ID
+      nodeping:
+        action: delete
+        checkid: 201205050153W2Q4C-0J2HSIRF
 """
 
 RETURN = """
@@ -617,8 +625,10 @@ def delete_nodeping_check(parameters):
     try:
         result["error"]
     except KeyError:
+        result["changed"] = True
         return (True, checkid, result)
     else:
+        result["changed"] = False
         return (False, checkid, result)
 
 
@@ -642,7 +652,7 @@ def convert_contacts(notification_contacts, token, customerid):
                                 {
                                     key: {
                                         "schedule": contact["notifyschedule"],
-                                        "delay": contact["notifydelay"]
+                                        "delay": contact["notifydelay"],
                                     }
                                 }
                             ]
@@ -656,26 +666,31 @@ def convert_contacts(notification_contacts, token, customerid):
                         {
                             key: {
                                 "schedule": contact["notifyschedule"],
-                                "delay": contact["notifydelay"]
+                                "delay": contact["notifydelay"],
                             }
                         }
                     ]
         elif "notificationprofile" in contact.keys():
             if not account_notificationprofiles:
-                account_notificationprofiles = nodepingpy.notificationprofiles.get_all(token, customerid)
+                account_notificationprofiles = nodepingpy.notificationprofiles.get_all(
+                    token, customerid
+                )
 
             for key, value in account_notificationprofiles.items():
-                if value["name"] == contact["notificationprofile"] or key == contact["notificationprofile"]:
-                    all_contacts += [
-                        {
-                            key: {
-                                "schedule": "All",
-                                "delay": 0
-                            }
-                        }
-                    ]
+                if (
+                    value["name"] == contact["notificationprofile"]
+                    or key == contact["notificationprofile"]
+                ):
+                    all_contacts += [{key: {"schedule": "All", "delay": 0}}]
         elif "contact" in contact.keys():
-            all_contacts += [{contact["contact"]: {"schedule": contact["notifyschedule"], "delay": contact["notifydelay"]}}]
+            all_contacts += [
+                {
+                    contact["contact"]: {
+                        "schedule": contact["notifyschedule"],
+                        "delay": contact["notifydelay"],
+                    }
+                }
+            ]
         else:
             continue
 
