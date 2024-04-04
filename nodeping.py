@@ -389,6 +389,7 @@ EXAMPLES = """
     - name: Modify an existing check to ping IPv6
       nodeping:
         action: update
+        checktype: PING
         checkid: 201205050153W2Q4C-0J2HSIRF
         ipv6: yes
     
@@ -508,110 +509,75 @@ def create_nodeping_check(parameters):
 
 def update_nodeping_check(parameters):
     """Update an existing NodePing check."""
-    update_fields = {}
-    changed = False
-
     token = parameters["token"]
-    check_id = parameters["checkid"]
     label = parameters["label"]
     customerid = parameters["customerid"]
-    check_info = nodepingpy.checks.get_by_id(token, check_id, customerid)
-    checktype = check_info["type"]
+    check_id = parameters["checkid"]
+    checktype = parameters["checktype"]
+    oldresult = nodepingpy.checks.get_by_id(token, check_id, customerid)
 
-    # Removes all values that are not provided by the user
-    stripped_params = {
-        key: value for (key, value) in parameters.items() if value is not None
-    }
+    # Sometimes dep is an empty string, set it to False since updating it
+    # may set the value to False
+    if oldresult["dep"] == "":
+        oldresult["dep"] = False
 
-    for key, value in check_info.items():
-        try:
-            # The new value provided by the user to compare to
-            # The value the check currently has
-            compare = stripped_params[key]
-        except KeyError:
-            if not isinstance(value, dict):
-                continue
+    classname = "{}Check".format(checktype.title())
+    (_, checkclass) = [
+        func
+        for func in inspect.getmembers(nodepingpy.checktypes)
+        if inspect.isclass(func[1]) and func[0] == classname
+    ][0]
 
-        # Compare nested dictionaries for differences
-        # (eg ipv6, sens, target, threshold)
-        if isinstance(value, dict):
-            for subkey, subvalue in value.items():
-                try:
-                    compare = stripped_params[subkey]
-                except KeyError:
-                    continue
+    # websocketdata isn't part of the API but is necessary to get the data in
+    # string format for the 'data' key. This is a workaround to ensure the
+    # NodePing API gets the expected data key, and make sure the Ansible
+    # module is happy with the other `data` keys that are a dict.
+    if checktype == "WEBSOCKET":
+        parameters.update({"data": parameters["websocketdata"]})
+        del parameters["websocketdata"]
 
-                if subvalue != compare:
-                    changed = True
-                    update_fields.update({subkey: compare})
+    if parameters["mute"]:
+        parameters.update({"mute": set_mute_timestamp(parameters["mute"])})
 
-            continue
+    # Get contacts & notification schedules if they exist
+    if parameters["notifications"]:
+        notifications = parameters["notifications"]
 
-        # Required to properly update the data field for WEBSOCKET checks
-        if checktype == "WEBSOCKET" and parameters["websocketdata"]:
-            update_fields.update({"data": parameters["websocketdata"]})
+        if not isinstance(notifications, list):
+            notifications = [notifications]
 
-        # Replace the old notifications with the newly provided ones
-        if key == "notifications":
-            update_fields.update(
-                {
-                    "notifications": convert_contacts(
-                        parameters["notifications"], token, customerid
-                    )
-                }
-            )
+        parameters.update(
+            {"notifications": convert_contacts(notifications, token, customerid)}
+        )
 
-            continue
+    args_dict = {}
+    check_keys = checkclass.__annotations__.keys()
 
-        if key == "mute":
-            mute = set_mute_timestamp(stripped_params["mute"])
+    for key in parameters.keys():
+        if key in check_keys and parameters[key] != None:
+            args_dict.update({key: parameters[key]})
 
-            if mute != check_info["mute"]:
-                changed = True
-                update_fields.update({"mute": mute})
+    updated = nodepingpy.checks.update_check(token, check_id, checktype, args_dict, customerid)
+    newresult = nodepingpy.checks.get_by_id(token, check_id, customerid)
 
-            continue
-
-        # Always pass the provided dependency because not passing it will
-        # remove the dependency from the existing check
-        if key == "dep":
-            update_fields.update({"dep": compare})
-            continue
-
-        # If the value is different, add the change
-        if value != compare:
-            changed = True
-            update_fields.update({key: compare})
-
-    if "enabled" in stripped_params.keys():
-        enabled = stripped_params["enabled"]
-        if enabled is True:
-            check_enable = "active"
-            ret_enabled = "true"
-        elif enabled is False:
-            check_enable = "inactive"
-            ret_enabled = "false"
-        else:
-            check_enable = "inactive"
-            ret_enabled = "false"
-
-        if check_enable != check_info["enable"]:
-            changed = True
-
-        update_fields.update({"enabled": ret_enabled})
-
-    # Update the check
-    result = nodepingpy.checks.update_check(
-        token, check_id, checktype, update_fields, customerid
-    )
-    result.update({"changed": changed})
+    # Strip out the modified fields before checking. NodePing recognizes a check
+    # as changed by simply doing a PUT request for the checkid. We want to check
+    # changes by any of the fields we submitted
+    del oldresult["modified"]
+    del newresult["modified"]
 
     try:
-        result["error"]
+        updated["modified"]
     except KeyError:
-        return (True, "%s changed" % label, result)
+        return(False, check_id, updated)
     else:
-        return (False, check_id, result)
+        for k, v in oldresult.items():
+            if v != newresult[k]:
+                updated["changed"] = True
+                return (True, "{} changed".format(label), updated)
+
+        updated["changed"] = False
+        return(True, check_id, updated)
 
 
 def delete_nodeping_check(parameters):
