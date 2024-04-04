@@ -389,7 +389,6 @@ EXAMPLES = """
     - name: Modify an existing check to ping IPv6
       nodeping:
         action: update
-        checktype: PING
         checkid: 201205050153W2Q4C-0J2HSIRF
         ipv6: yes
     
@@ -513,9 +512,9 @@ def update_nodeping_check(parameters):
     label = parameters["label"]
     customerid = parameters["customerid"]
     check_id = parameters["checkid"]
-    checktype = parameters["checktype"]
     oldresult = nodepingpy.checks.get_by_id(token, check_id, customerid)
-
+    checktype = oldresult["type"]
+   
     # Sometimes dep is an empty string, set it to False since updating it
     # may set the value to False
     if oldresult["dep"] == "":
