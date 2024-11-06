@@ -553,7 +553,7 @@ def update_nodeping_check(parameters):
     check_keys = checkclass.__annotations__.keys()
 
     for key in parameters.keys():
-        if key in check_keys and parameters[key] != None:
+        if key in check_keys and parameters[key] is not None:
             args_dict.update({key: parameters[key]})
 
     updated = nodepingpy.checks.update_check(token, check_id, checktype, args_dict, customerid)
