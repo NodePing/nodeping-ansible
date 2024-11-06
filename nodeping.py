@@ -367,7 +367,7 @@ EXAMPLES = """
             notifydelay: 15
             notifyschedule: All the time
           - notificationprofile: 201205050153W2Q4C-P-3JKXH
-    
+
     # Create a DNS check with a contact group for notifications with Daytime alerts
     - name: Create DNS check to check every 5 minutes
       nodeping:
@@ -384,14 +384,14 @@ EXAMPLES = """
           notifydelay: 0
           notifyschedule: Daytime
         - notificationprofile: My Awesome Profile
-    
+
     # Modify a check based on its checkid
     - name: Modify an existing check to ping IPv6
       nodeping:
         action: update
         checkid: 201205050153W2Q4C-0J2HSIRF
         ipv6: yes
-    
+
     # Delete a check
     - name: Delete this check based on its ID
       nodeping:
@@ -514,7 +514,7 @@ def update_nodeping_check(parameters):
     check_id = parameters["checkid"]
     oldresult = nodepingpy.checks.get_by_id(token, check_id, customerid)
     checktype = oldresult["type"]
-   
+
     # Sometimes dep is an empty string, set it to False since updating it
     # may set the value to False
     if oldresult["dep"] == "":
@@ -524,7 +524,7 @@ def update_nodeping_check(parameters):
     (_, checkclass) = [
         func
         for func in inspect.getmembers(nodepingpy.checktypes)
-        if inspect.isclass(func[1]) and func[0] == classname
+        if inspect.isclass(func[1]) and func[0].upper() == classname.upper()
     ][0]
 
     # websocketdata isn't part of the API but is necessary to get the data in
