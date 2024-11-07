@@ -517,7 +517,7 @@ def update_nodeping_check(parameters):
    
     # Sometimes dep is an empty string, set it to False since updating it
     # may set the value to False
-    if oldresult["dep"] == "":
+    if "dep" in oldresult.keys() and oldresult["dep"] == "":
         oldresult["dep"] = False
 
     classname = "{}Check".format(checktype.title())
