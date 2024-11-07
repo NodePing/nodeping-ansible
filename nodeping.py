@@ -458,11 +458,11 @@ def create_nodeping_check(parameters):
     customerid = parameters["customerid"]
     name = parameters["label"] or parameters["target"]
     checktype = parameters["checktype"].upper()
-    classname = "{}Check".format(checktype.title())
+    classname = "{}Check".format(checktype)
     (_, checkclass) = [
         func
         for func in inspect.getmembers(nodepingpy.checktypes)
-        if inspect.isclass(func[1]) and func[0] == classname
+        if inspect.isclass(func[1]) and func[0].upper() == classname.upper()
     ][0]
 
     # websocketdata isn't part of the API but is necessary to get the data in
@@ -520,7 +520,7 @@ def update_nodeping_check(parameters):
     if "dep" in oldresult.keys() and oldresult["dep"] == "":
         oldresult["dep"] = False
 
-    classname = "{}Check".format(checktype.title())
+    classname = "{}Check".format(checktype)
     (_, checkclass) = [
         func
         for func in inspect.getmembers(nodepingpy.checktypes)
