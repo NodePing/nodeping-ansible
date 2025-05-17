@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 (Placeholder for unreleased content)
 
+## [2025-05-16]
+
+* Fix imports with `nodepingpy` 1.1.0
+* Remove shebang from module files
+
 ## [2024-04-04]
 
 Example corrections and some code refactoring
